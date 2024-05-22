@@ -1,0 +1,7 @@
+src/venv
+src/__pycache__
+src/data/__pycache__
+src/model/__pycache__
+src/service/__pycache__
+src/web/__pycache__
+src/comfyui/__pycache__

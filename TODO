@@ -1,0 +1,24 @@
+tree -I 'venv'
+
+estimate which droplet we'll need to buy on digitalocean
+
+set up production step by step with this gold: https://fastapi.tiangolo.com/how-to/
+
+
+TBD V2:
+
+TEAMS:
+- invitation + acceptance
+
+MIDJOURNEY:
+- doing faceswap on source (source must be from mymidjourney imagine) and target image from uploadcare
+- cancelling job which does not run (existed or never existed)
+- cancelling job while it's doing
+
+DEEPFAKE WITH AKOOL
+- akool video + mov, mp4, HEIC
+
+
+
+🥰 HIGH LEVEL PLANS 🥰:
+figure out how to make image generation much more reliable and faster - probably we need some 

@@ -1,0 +1,49 @@
+curl --request POST \
+  --url https://api.radom.com/checkout_session \
+  --header 'Authorization: eyJhZGRyZXNzIjpudWxsLCJvcmdhbml6YXRpb25faWQiOiI1Njc3ZTU0OC0zMWEwLTRmZWMtODA5OS1kM2QyODkzYjYwZmQiLCJzZXNzaW9uX2lkIjoiYWY4ZjA2YTktNzliOS00NGM3LTk0ODgtZDk2MGUyMDRlZTAzIiwiZXhwaXJlZF9hdCI6IjIwMjUtMDUtMjBUMTQ6MzM6NDQuMjczNDU0NTExWiIsImlzX2FwaV90b2tlbiI6dHJ1ZX0=' \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "lineItems": [
+    {
+      "productId": "b6375abf-3f56-4919-bdc4-e41b2e633bd2",
+      "itemData": {
+        "name": "string",
+        "description": "string",
+        "chargingIntervalSeconds": 0,
+        "price": 0,
+        "imageUrl": "string",
+        "isMetered": true,
+        "currency": "GBP",
+        "sendSubscriptionEmails": true
+      }
+    }
+  ],
+  "currency": "GBP",
+  "gateway": {
+    "managed": {
+      "methods": [
+        {
+          "network": "SepoliaTestnet",
+          "token": "0x8EAa8735BF21C1B2BEFAc6B00d5Af5dCCDFa5Fbe",
+          "discountPercentOff": 0
+        }
+      ]
+    }
+  },
+  "successUrl": "string",
+  "cancelUrl": "string",
+  "metadata": [
+    {
+      "key": "string",
+      "value": "string"
+    }
+  ],
+  "expiresAt": 1747827000,
+  "customizations": {
+    "leftPanelColor": "string",
+    "primaryButtonColor": "string",
+    "slantedEdge": true,
+    "allowDiscountCodes": true
+  },
+  "chargeCustomerNetworkFee": true
+}'

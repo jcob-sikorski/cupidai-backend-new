@@ -1,0 +1,118 @@
+planning thorough tests
+
+Note: for each cycle of tests place a number of a cycle
+
+ACCOUNT
+
+- signing up and receving valid access Token ✅ 1.
+- getting welcome email on successful signup ✅ 1.
+- logging in with a valid token ✅ 1.
+- logging in with invalid password ✅ 1.
+- asking to reset password and receving email with reset password id ✅ 1.
+- resetting password for existing user with a password id ✅ 1.
+- resetting password for existing user with expired password id link ✅ 1.
+- resetting password for user that does not exist ✅ 1.
+- changing email ✅ 1.
+- getting user account ✅ 1.
+- changing profile picture ✅ 1.
+- deleting existing user account ✅ 1.
+- deleting non-existent user account ✅ 1.
+
+
+MIDJOURNEY
+
+tests:
+- receiving event on webhook and updating prompt history ✅ 1.
+- doing imagine with valid custom settings ✅ 1.
+- doing imagine with invalid custom settings ✅ 1.
+- getting history of midjourney prompts ✅ 1.
+- using all the buttons to make action on the image ✅ 1.
+- using non-existent button to make action on the image ✅ 1.
+
+Note: before running any tests buy a plan to do this
+
+
+BILLING
+
+tests:
+- receiving event if user bought/upgraded/downgraded/cancelled a plan ✅ 1.
+- updating statistics of a user who made referral when someone bought using his link ✅ 1.
+- sending email to user when someone bought using his link ✅ 1.
+- checking if user paid thanks to the referral ✅ 1.
+- downloading invoice history in a well formatted csv file
+- getting billing history         (after we learn how to map customer_id to user_id probably this needs to be real payment)
+- accepting tos by a user and saving the date he accepted it ✅ 1.
+- getting the plan of the user who bought         (after we learn how to map customer_id to user_id probably this needs to be real payment)
+- getting the plan of the user who upgraded 
+- getting the plan of the user who downgraded
+- getting the plan of the user who cancelled
+- handling the error when user does not have permissions        (after we learn how to map customer_id to user_id probably this needs to be real payment)
+- checking if user has permissions - test all the plans and features        (after we learn how to map customer_id to user_id probably this needs to be real payment)
+
+Note: figure out stripe cli and test all the plans + add features for each plan
+
+
+BUG REPORTS
+
+tests:
+- reporting a bug with a description, user_id and a date ✅ 1.
+
+
+DEEPFAKE WITH AKOOL
+
+tests:
+- generating a deepfake for source and target photos of a single face ✅ 1.
+- generating a deepfake for source and target photos of multiple faces
+- generating a deepfake for source, target photos of single face and modify_video
+- generating a deepfake for source, target photos of multiple faces and modify_video
+- getting history of all runs: successful, failed and in progress
+
+
+HISTORY
+
+tests:
+- getting history of usage for existing user ✅ 1.
+- getting history for a user who never used anything yet ✅ 1.
+- updating history for all the options ✅ 1.
+
+
+
+COMFYUI
+
+tests:
+- getting all params from request ✅ 0.
+- sending webhook acknowledgement ✅ 0.
+- webhook ack received ✅ 0.
+- updating status of the message ✅ 0.
+- downloading and saving images from uploadcare uris ✅ 0.
+- parsing the generated workflow ✅ 0.
+- generating images based on the workflow ✅ 0.
+- removing images ✅ 0.
+
+Note: before running any tests preinstall all the models and 
+      then test 5-6 different workflows
+
+
+REFERRALS
+
+tests:
+- generating valid link ✅ 1.
+- requesting a payout ✅ 1.
+- getting unpaid earnings ✅ 1.
+- getting statistics ✅ 1.
+- getting statistics for user who does not have any stats yet ✅ 1.
+- getting payout history
+- tracking number of signups thanks to the host's referral ✅ 1.
+- updating user's earnings when someone paid ✅ 1.
+
+
+SOCIAL ACCOUNT
+- creating social account ✅ 1.
+- updating social account ✅ 1.
+- getting social accounts for the user ✅ 1.
+
+
+EMAIL
+
+tests:
+- receiving correct email on the specific event
