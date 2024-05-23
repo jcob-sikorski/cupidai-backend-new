@@ -28,6 +28,7 @@ async def has_permissions(req: FeatureRequest,
                                    user)
 
 
+# TODO: this should be named create radom checkout session
 @router.post('/create-checkout-session', status_code=200)
 async def create_checkout_session(req: CheckoutSessionRequest,
                                   user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> None:
@@ -35,6 +36,8 @@ async def create_checkout_session(req: CheckoutSessionRequest,
                                            user)
 
 # TODO: add here the webhook access token so it's safe
+
+# TODO: we should differentiate between the paypal webhook and radom webhook
 @router.post('/webhook')
 async def webhook(request: Request) -> None:
     radom_verification_key = request.headers.get("radom-verification-key")
@@ -48,6 +51,7 @@ async def webhook(request: Request) -> None:
     return await service.webhook(request)
 
 
+# TODO: internals should check which payment provider user used
 @router.post("/cancel-plan", status_code=201)  # Attempts to cancel current plan of the user
 async def cancel_plan(user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> bool:
     return service.cancel_plan(user)

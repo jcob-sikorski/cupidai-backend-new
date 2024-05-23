@@ -18,7 +18,7 @@ import service.account as account_service
 import service.email as email_service
 import service.referral as referral_service
 
-
+# TODO: make a branching logic for paypal
 def has_permissions(feature: str, 
                     user: Account) -> bool:
     
@@ -26,8 +26,6 @@ def has_permissions(feature: str,
         return True
     
     payment_account = get_payment_account(user.user_id)
-
-    # TODO: make a branching logic for paypal
 
     if payment_account and payment_account.radom_subscription_id:
         url = f"https://api.radom.com/subscription/{payment_account.radom_subscription_id}"
@@ -51,6 +49,7 @@ def has_permissions(feature: str,
             
     return False
 
+# TODO: name this as radom specific function
 def create_checkout_session(
     req: CheckoutSessionRequest,
     user: Account
@@ -170,6 +169,9 @@ def create_checkout_session(
         return {}  # Return an empty dictionary in case of error
 
 
+# TODO: create paypal webhook too
+
+# TODO: name this as radom webhook
 async def webhook(request: Request) -> None:
     print("WEBHOOK REQUEST")
     body = await request.body()
@@ -238,7 +240,8 @@ async def webhook(request: Request) -> None:
 
     return
 
-
+# TODO: create branching which based on the radom 
+#       or paypal fires specific request
 def cancel_plan(user: Account) -> bool:
     payment_account = get_payment_account(user.user_id)
 
@@ -278,6 +281,7 @@ def get_available_plans(user: Account) -> Optional[Dict[str, Any]]:
         "radom_product_id": current_plan_id
     }
 
+# TODO: this should be named specific to radom
 def create_checkout_session_metadata(user_id: str, 
                                      radom_checkout_session_id: str,
                                      referral_id: Optional[str] = None) -> None:
@@ -287,15 +291,18 @@ def create_checkout_session_metadata(user_id: str,
                                                  radom_checkout_session_id,
                                                  referral_id)
     
+
+# TODO: this should be named specific to radom
 def get_checkout_session_metadata(radom_checkout_session_id: str) -> Optional[CheckoutSessionMetadata]:
     return data.get_checkout_session_metadata(radom_checkout_session_id)
+
 
 def get_product(paypal_product_id: str,
                 radom_product_id: str) -> Optional[Plan]:
     return data.get_product(paypal_product_id,
                             radom_product_id)
 
-
+# TODO: it should also add paypal specific critical fields
 def create_payment_account(user_id: str, 
                            radom_subscription_id: str,
                            radom_checkout_session_id: str,
@@ -310,17 +317,18 @@ def create_payment_account(user_id: str,
                                        radom_product_id,
                                        referral_id)
 
+# TODO: it should also accept paypal specific critical args
 def remove_payment_account(radom_subscription_id: str):
     return data.remove_payment_account(radom_subscription_id)
 
-
+# TODO: this should probably accept paypal specific critical args
 def get_payment_account(user_id: str, 
                         radom_checkout_session_id: str = None) -> Optional[PaymentAccount]:
     
     return data.get_payment_account(user_id,
                                     radom_checkout_session_id)
 
-
+# TODO: it should also rely on paypal
 def get_current_plan(user: Account) -> Optional[Plan]:
     payment_account = get_payment_account(user.user_id)
 

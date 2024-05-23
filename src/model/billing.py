@@ -15,6 +15,7 @@ class TermsOfService(BaseModel):
     user_id: str | None = None
     date_accepted: datetime | None = None
 
+# TODO: this should have a paypal product id and link to the checkout
 class Plan(BaseModel):
     name: str | None = None
     tag: str | None = None

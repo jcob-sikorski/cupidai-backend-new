@@ -8,7 +8,7 @@ from model.billing import PaymentAccount, TermsOfService, Plan, CheckoutSessionM
 # from .init import payment_account_col, team_col, tos_col, plan_col
 from .init import payment_account_col, tos_col, plan_col, checkout_session_metadata_col
 
-
+# TODO: it should also accept paypal specific critical args
 def create_payment_account(user_id: str, 
                            radom_subscription_id: str,
                            radom_checkout_session_id: str,
@@ -45,7 +45,7 @@ def create_payment_account(user_id: str,
             {"$set": update_fields}
         )
 
-
+# TODO: it should also accept paypal specific critical args
 def remove_payment_account(radom_subscription_id: str) -> None:
     # Find the payment account
     payment_account = payment_account_col.find_one({"radom_subscription_id": radom_subscription_id})
@@ -53,7 +53,7 @@ def remove_payment_account(radom_subscription_id: str) -> None:
     if payment_account:
         payment_account_col.delete_one({"radom_subscription_id": radom_subscription_id})
 
-
+# TODO: it should also accept paypal specific critical args
 def get_payment_account(user_id: str, 
                         radom_checkout_session_id: str = None) -> Optional[PaymentAccount]:
     print("GETTING CUSTOMER ID FROM MONGODB")
@@ -91,6 +91,7 @@ def get_available_plans() -> Optional[List[Plan]]:
     return plans
 
 
+# TODO: this should be named specific to radom
 def create_checkout_session_metadata(user_id: str, 
                                      radom_checkout_session_id: str,
                                      referral_id: Optional[str] = None) -> None:
@@ -119,6 +120,7 @@ def create_checkout_session_metadata(user_id: str,
         )
 
 
+# TODO: this should be named specific to radom
 def get_checkout_session_metadata(radom_checkout_session_id: str) -> Optional[CheckoutSessionMetadata]:
     # Query the MongoDB collection to find one document by radom_product_id
     result = checkout_session_metadata_col.find_one({"radom_checkout_session_id": radom_checkout_session_id})
