@@ -5,17 +5,18 @@ from datetime import datetime
 
 class PaymentAccount(BaseModel):
     user_id: str | None = None
+    paypal_plan_id: str | None = None
+    paypal_subscription_id: str | None = None
+    radom_product_id: str | None = None
     radom_subscription_id: str | None = None
     radom_checkout_session_id: str | None = None
     amount: float | None = None
-    radom_product_id: str | None = None
     referral_id: Optional[str] = None
 
 class TermsOfService(BaseModel):
     user_id: str | None = None
     date_accepted: datetime | None = None
 
-# TODO: this should have a paypal product id and link to the checkout
 class Plan(BaseModel):
     name: str | None = None
     tag: str | None = None
@@ -24,9 +25,11 @@ class Plan(BaseModel):
     price: float | None = None
     radom_product_id: str | None = None
     stripe_product_id: str | None = None
+    paypal_plan_id: str | None = None
+    paypal_checkout_link: str | None = None
 
 class ProductRequest(BaseModel):
-    paypal_product_id: Optional[str] = None
+    paypal_plan_id: Optional[str] = None
     radom_product_id: Optional[str] = None
 
 class CheckoutSessionRequest(BaseModel):

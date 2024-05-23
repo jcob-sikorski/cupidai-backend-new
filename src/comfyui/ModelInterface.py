@@ -342,7 +342,7 @@ def generate_workflow(settings: Settings,
                                                     ipa1_enabled=settings.ipa_1_enabled)
         
         if settings.refinement_enabled:
-            if settings.ipa_2_enabled: # TODO: actually ipa_2_reference_image is not required becuase we check for that here
+            if settings.ipa_2_enabled:
                 if settings.ipa_2_reference_image:
                     file_extension = format_map[image_formats[1]]
                     settings.ipa_2_reference_image = predefined_path + "/" + image_ids[1] + file_extension

@@ -7,6 +7,9 @@ from data import referral as data
 from model.account import Account
 from model.referral import PayoutSubmission, Referral
 
+import service.account as account_service
+import service.email as email_service
+
 def generate_link(user: Account) -> str:
     return data.generate_link(user.user_id)
 
@@ -59,6 +62,18 @@ def log_signup_ref(referral_id: str,
         update_statistics(referral.host_id, amount=0, clicked=False, signup_ref=True)
     except ValueError:
         raise ValueError(f"Referral with ID {referral_id} does not exist.")
+    
+def update_for_host(referral: Referral, 
+                    amount: float) -> None:
+    if referral:
+        update_statistics(referral.host_id, 
+                          amount,
+                          clicked=False, 
+                          signup_ref=False)
+            
+        user = account_service.get_by_id(referral.host_id)
+        if user:
+            email_service.send(user.email, 'clv2tl6jd00vybfeainihiu2j')
 
 def get_statistics(user: Account) -> None:
     return data.get_statistics(user.user_id)

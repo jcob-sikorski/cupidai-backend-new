@@ -8,8 +8,9 @@ from model.billing import PaymentAccount, TermsOfService, Plan, CheckoutSessionM
 # from .init import payment_account_col, team_col, tos_col, plan_col
 from .init import payment_account_col, tos_col, plan_col, checkout_session_metadata_col
 
-# TODO: it should also accept paypal specific critical args
 def create_payment_account(user_id: str, 
+                           paypal_plan_id: str,
+                           paypal_subscription_id: str,
                            radom_subscription_id: str,
                            radom_checkout_session_id: str,
                            amount: float,
@@ -21,6 +22,8 @@ def create_payment_account(user_id: str,
         # Create a new payment account
         payment_account = {
             "user_id": user_id,
+            "paypal_plan_id": paypal_plan_id,
+            "paypal_subscription_id": paypal_subscription_id,
             "radom_subscription_id": radom_subscription_id,
             "radom_checkout_session_id": radom_checkout_session_id,
             "amount": amount,
@@ -31,6 +34,8 @@ def create_payment_account(user_id: str,
     else:
         # Update the existing payment account
         update_fields = {
+            "paypal_plan_id": paypal_plan_id,
+            "paypal_subscription_id": paypal_subscription_id,
             "radom_subscription_id": radom_subscription_id,
             "radom_checkout_session_id": radom_checkout_session_id,
             "amount": amount,
@@ -39,26 +44,48 @@ def create_payment_account(user_id: str,
         
         if referral_id is not None:
             update_fields["referral_id"] = referral_id
+
+        update_fields = {key: value for key, value in update_fields.items() if value is not None}
         
         payment_account_col.update_one(
             {"user_id": user_id},
             {"$set": update_fields}
         )
 
-# TODO: it should also accept paypal specific critical args
-def remove_payment_account(radom_subscription_id: str) -> None:
+def remove_payment_account(paypal_subscription_id: Optional[str] = None,
+                           radom_subscription_id: Optional[str] = None) -> None:
+    
     # Find the payment account
-    payment_account = payment_account_col.find_one({"radom_subscription_id": radom_subscription_id})
+    payment_account = payment_account_col.find_one({
+        "paypal_subscription_id": paypal_subscription_id
+        })
 
     if payment_account:
-        payment_account_col.delete_one({"radom_subscription_id": radom_subscription_id})
+        payment_account_col.delete_one({
+            "paypal_subscription_id": paypal_subscription_id
+            })
+
+        
+    # Find the payment account
+    payment_account = payment_account_col.find_one({
+        "radom_subscription_id": radom_subscription_id
+    })
+
+    if payment_account:
+        payment_account_col.delete_one({
+            "radom_subscription_id": radom_subscription_id
+        })
 
 # TODO: it should also accept paypal specific critical args
 def get_payment_account(user_id: str, 
+                        paypal_subscription_id: str = None,
                         radom_checkout_session_id: str = None) -> Optional[PaymentAccount]:
-    print("GETTING CUSTOMER ID FROM MONGODB")
-
-    if radom_checkout_session_id is not None:
+    
+    if paypal_subscription_id is not None:
+        result = payment_account_col.find_one({
+            "paypal_subscription_id": paypal_subscription_id
+        })
+    elif radom_checkout_session_id is not None:
         result = payment_account_col.find_one({"radom_checkout_session_id": radom_checkout_session_id})
     else:
         result = payment_account_col.find_one({"user_id": user_id})
@@ -91,16 +118,18 @@ def get_available_plans() -> Optional[List[Plan]]:
     return plans
 
 
-# TODO: this should be named specific to radom
-def create_checkout_session_metadata(user_id: str, 
-                                     radom_checkout_session_id: str,
+def radom_create_checkout_session_metadata(user_id: str, 
+                                     paypal_checkout_session_id: Optional[str] = None,
+                                     radom_checkout_session_id: Optional[str] = None,
                                      referral_id: Optional[str] = None) -> None:
+    
     checkout_session_metadata = checkout_session_metadata_col.find_one({"user_id": user_id})
 
     if not checkout_session_metadata:
         # Create a new payment account
         checkout_session_metadata = {
             "user_id": user_id,
+            "paypal_checkout_session_id": paypal_checkout_session_id,
             "radom_checkout_session_id": radom_checkout_session_id,
             "referral_id": referral_id
         }
@@ -108,11 +137,14 @@ def create_checkout_session_metadata(user_id: str,
     else:
         # Update the existing payment account
         update_fields = {
+            "paypal_checkout_session_id": paypal_checkout_session_id,
             "radom_checkout_session_id": radom_checkout_session_id
         }
         
         if referral_id is not None:
             update_fields["referral_id"] = referral_id
+
+        update_fields = {key: value for key, value in update_fields.items() if value is not None}
         
         payment_account_col.update_one(
             {"user_id": user_id},
@@ -120,10 +152,16 @@ def create_checkout_session_metadata(user_id: str,
         )
 
 
-# TODO: this should be named specific to radom
-def get_checkout_session_metadata(radom_checkout_session_id: str) -> Optional[CheckoutSessionMetadata]:
-    # Query the MongoDB collection to find one document by radom_product_id
-    result = checkout_session_metadata_col.find_one({"radom_checkout_session_id": radom_checkout_session_id})
+def get_checkout_session_metadata(paypal_checkout_session_id: Optional[str] = None,
+                                  radom_checkout_session_id: Optional[str] = None) -> Optional[CheckoutSessionMetadata]:
+
+    query = {}
+    if paypal_checkout_session_id:
+        query["paypal_checkout_session_id"] = paypal_checkout_session_id
+    if radom_checkout_session_id:
+        query["radom_checkout_session_id"] = radom_checkout_session_id
+
+    result = checkout_session_metadata_col.find_one(query)
     
     # If a result is found, convert it to a Plan instance
     if result:
@@ -133,11 +171,11 @@ def get_checkout_session_metadata(radom_checkout_session_id: str) -> Optional[Ch
     return None
 
 
-def get_product(paypal_product_id: Optional[str] = None,
+def get_product(paypal_plan_id: Optional[str] = None,
                 random_product_id: Optional[str] = None) -> Optional[Plan]:
     query = {}
-    if paypal_product_id:
-        query["paypal_product_id"] = paypal_product_id
+    if paypal_plan_id:
+        query["paypal_plan_id"] = paypal_plan_id
     elif random_product_id:
         query["radom_product_id"] = random_product_id
 

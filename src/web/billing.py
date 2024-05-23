@@ -28,16 +28,13 @@ async def has_permissions(req: FeatureRequest,
                                    user)
 
 
-# TODO: this should be named create radom checkout session
-@router.post('/create-checkout-session', status_code=200)
-async def create_checkout_session(req: CheckoutSessionRequest,
-                                  user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> None:
-    return service.create_checkout_session(req,
-                                           user)
+@router.post('/create-radom-checkout-session', status_code=200)
+async def create_radom_checkout_session(req: CheckoutSessionRequest,
+                                        user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> None:
+    return service.create_radom_checkout_session(req,
+                                                 user)
 
-# TODO: add here the webhook access token so it's safe
 
-# TODO: we should differentiate between the paypal webhook and radom webhook
 @router.post('/webhook')
 async def webhook(request: Request) -> None:
     radom_verification_key = request.headers.get("radom-verification-key")
@@ -50,6 +47,10 @@ async def webhook(request: Request) -> None:
 
     return await service.webhook(request)
 
+
+@router.post('/paypal-webhook')
+async def paypal_webhook(request: Request) -> None:
+    return await service.webhook(request)
 
 # TODO: internals should check which payment provider user used
 @router.post("/cancel-plan", status_code=201)  # Attempts to cancel current plan of the user
@@ -65,5 +66,5 @@ async def get_available_plans(user: Annotated[Account, Depends(account_service.g
 @router.get("/product", status_code=200)  # Retrieves the specific product
 async def get_product(req: ProductRequest,
                       _: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[Plan]:
-    return service.get_product(req.paypal_product_id,
+    return service.get_product(req.paypal_plan_id,
                                req.radom_product_id)
