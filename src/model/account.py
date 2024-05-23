@@ -11,6 +11,9 @@ class Account(BaseModel):
     profile_uri: str | None = None
     disabled: bool | None = None
 
+class InsiderAccount(BaseModel):
+    user_id: str
+
 class Invite(BaseModel):
     invite_id: str
     guest_id: str

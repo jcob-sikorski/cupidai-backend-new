@@ -2,10 +2,10 @@ from bson.objectid import ObjectId
 
 from typing import Optional
 
-from model.account import Account, Invite, PasswordReset
+from model.account import Account, Invite, PasswordReset, InsiderAccount
 
 from pymongo import ReturnDocument
-from .init import account_col, invite_col, password_reset_col
+from .init import account_col, invite_col, password_reset_col, insider_account_col
 
 def signup(email: str, 
            username: str, 
@@ -26,6 +26,11 @@ def signup(email: str,
 
     # Optionally, return the newly created account
     return account
+
+
+def is_insider(user_id: str) -> bool:
+    result = insider_account_col.find_one({"user_id": user_id})
+    return result is not None
 
 
 def create_invite(invite: Invite):
@@ -128,6 +133,7 @@ def set_new_password(password_hash: str, user_id: str) -> None:
     )
 
     return result is not None
+
 
 def disable_password_reset(reset_id: str) -> bool:
     print("MARKING THE PASSWORD RESET AS USED")

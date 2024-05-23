@@ -183,6 +183,9 @@ def change_password(password_reset_id: str,
                 return
     raise HTTPException(status_code=400, detail="Failed to reset password.")
     
+
+def is_insider(user: Account) -> bool:
+    return data.is_insider(user.user_id)
                 
 
 def request_one_time_link(email: str) -> None:

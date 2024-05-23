@@ -28,6 +28,7 @@ def get_db():
 
     db = mongoClient[f"{os.getenv('MONGODB_DB')}"]
     account_col = db['Account']
+    insider_account_col = db['InsiderAccount']
     invite_col = db['Invite']
     password_reset_col = db['PasswordReset']
     payment_account_col = db['PaymentAccount']
@@ -50,6 +51,7 @@ def get_db():
     # member_col = db['Member']
 
     return (account_col, 
+            insider_account_col,
             invite_col, 
             password_reset_col, 
             payment_account_col, 
@@ -71,6 +73,7 @@ def get_db():
             social_account_col)
 
 (account_col, 
+ insider_account_col,
  invite_col, 
  password_reset_col, 
  payment_account_col, 

@@ -9,13 +9,6 @@ from model.billing import PaymentAccount, TermsOfService, Plan, CheckoutSessionM
 from .init import payment_account_col, tos_col, plan_col, checkout_session_metadata_col
 
 
-def has_permissions(feature: str, user_id: str) -> bool:
-    print("CHECKING PERMISSIONS")
-    current_plan = get_current_plan(user_id)
-
-    return current_plan and feature in current_plan.features
-
-
 def create_payment_account(user_id: str, 
                            subscription_id: str,
                            checkout_session_id: str,

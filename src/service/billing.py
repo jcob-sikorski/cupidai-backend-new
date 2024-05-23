@@ -22,6 +22,9 @@ import service.referral as referral_service
 def has_permissions(feature: str, 
                     user: Account) -> bool:
     
+    if account_service.is_insider(user):
+        return True
+    
     payment_account = get_payment_account(user.user_id)
 
     if payment_account and payment_account.subscription_id:
