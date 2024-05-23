@@ -9,7 +9,7 @@ from fastapi import HTTPException
 import os
 
 from model.account import Account
-from model.billing import Plan, CheckoutSessionRequest
+from model.billing import Plan, CheckoutSessionRequest, ProductRequest
 
 from service import account as account_service
 import service.billing as service
@@ -59,6 +59,7 @@ async def get_available_plans(user: Annotated[Account, Depends(account_service.g
 
 
 @router.get("/product", status_code=200)  # Retrieves the specific product
-async def get_product(radom_product_id: str,
-                      user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[Plan]:
-    return service.get_product(radom_product_id)
+async def get_product(req: ProductRequest,
+                      _: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[Plan]:
+    return service.get_product(req.paypal_product_id,
+                               req.radom_product_id)

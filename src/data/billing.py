@@ -131,9 +131,16 @@ def get_checkout_session_metadata(checkout_session_id: str) -> Optional[Checkout
     return None
 
 
-def get_product(radom_product_id: str) -> Optional[Plan]:
-    # Query the MongoDB collection to find one document by radom_product_id
-    result = plan_col.find_one({"radom_product_id": radom_product_id})
+def get_product(paypal_product_id: Optional[str] = None,
+                random_product_id: Optional[str] = None) -> Optional[Plan]:
+    query = {}
+    if paypal_product_id:
+        query["paypal_product_id"] = paypal_product_id
+    elif random_product_id:
+        query["radom_product_id"] = random_product_id
+
+    # Query the MongoDB collection based on the non-None field
+    result = plan_col.find_one(query)
     
     # If a result is found, convert it to a Plan instance
     if result:

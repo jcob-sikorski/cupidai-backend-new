@@ -22,6 +22,11 @@ class Plan(BaseModel):
     features: List[str] | None = None
     price: float | None = None
     radom_product_id: str | None = None
+    stripe_product_id: str | None = None
+
+class ProductRequest(BaseModel):
+    paypal_product_id: Optional[str] = None
+    radom_product_id: Optional[str] = None
 
 class CheckoutSessionRequest(BaseModel):
     radom_product_id: str

@@ -288,8 +288,10 @@ def create_checkout_session_metadata(user_id: str,
 def get_checkout_session_metadata(checkout_session_id: str) -> Optional[CheckoutSessionMetadata]:
     return data.get_checkout_session_metadata(checkout_session_id)
 
-def get_product(radom_product_id: str) -> Optional[Plan]:
-    return data.get_product(radom_product_id)
+def get_product(paypal_product_id: str,
+                radom_product_id: str) -> Optional[Plan]:
+    return data.get_product(paypal_product_id,
+                            radom_product_id)
 
 
 def create_payment_account(user_id: str, 
