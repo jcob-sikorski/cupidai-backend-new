@@ -5,8 +5,8 @@ from datetime import datetime
 
 class PaymentAccount(BaseModel):
     user_id: str | None = None
-    subscription_id: str | None = None
-    checkout_session_id: str | None = None
+    radom_subscription_id: str | None = None
+    radom_checkout_session_id: str | None = None
     amount: float | None = None
     radom_product_id: str | None = None
     referral_id: Optional[str] = None
@@ -33,6 +33,6 @@ class CheckoutSessionRequest(BaseModel):
     referral_id: Optional[str] = None
 
 class CheckoutSessionMetadata(BaseModel):
-    checkout_session_id: str
+    radom_checkout_session_id: str
     user_id: str
     referral_id: Optional[str] = None

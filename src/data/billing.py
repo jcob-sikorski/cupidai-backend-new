@@ -10,8 +10,8 @@ from .init import payment_account_col, tos_col, plan_col, checkout_session_metad
 
 
 def create_payment_account(user_id: str, 
-                           subscription_id: str,
-                           checkout_session_id: str,
+                           radom_subscription_id: str,
+                           radom_checkout_session_id: str,
                            amount: float,
                            radom_product_id: str,
                            referral_id: Optional[str] = None) -> None:
@@ -21,8 +21,8 @@ def create_payment_account(user_id: str,
         # Create a new payment account
         payment_account = {
             "user_id": user_id,
-            "subscription_id": subscription_id,
-            "checkout_session_id": checkout_session_id,
+            "radom_subscription_id": radom_subscription_id,
+            "radom_checkout_session_id": radom_checkout_session_id,
             "amount": amount,
             "radom_product_id": radom_product_id,
             "referral_id": referral_id
@@ -31,8 +31,8 @@ def create_payment_account(user_id: str,
     else:
         # Update the existing payment account
         update_fields = {
-            "subscription_id": subscription_id,
-            "checkout_session_id": checkout_session_id,
+            "radom_subscription_id": radom_subscription_id,
+            "radom_checkout_session_id": radom_checkout_session_id,
             "amount": amount,
             "radom_product_id": radom_product_id
         }
@@ -46,20 +46,20 @@ def create_payment_account(user_id: str,
         )
 
 
-def remove_payment_account(subscription_id: str) -> None:
+def remove_payment_account(radom_subscription_id: str) -> None:
     # Find the payment account
-    payment_account = payment_account_col.find_one({"subscription_id": subscription_id})
+    payment_account = payment_account_col.find_one({"radom_subscription_id": radom_subscription_id})
 
     if payment_account:
-        payment_account_col.delete_one({"subscription_id": subscription_id})
+        payment_account_col.delete_one({"radom_subscription_id": radom_subscription_id})
 
 
 def get_payment_account(user_id: str, 
-                        checkout_session_id: str = None) -> Optional[PaymentAccount]:
+                        radom_checkout_session_id: str = None) -> Optional[PaymentAccount]:
     print("GETTING CUSTOMER ID FROM MONGODB")
 
-    if checkout_session_id is not None:
-        result = payment_account_col.find_one({"checkout_session_id": checkout_session_id})
+    if radom_checkout_session_id is not None:
+        result = payment_account_col.find_one({"radom_checkout_session_id": radom_checkout_session_id})
     else:
         result = payment_account_col.find_one({"user_id": user_id})
 
@@ -92,7 +92,7 @@ def get_available_plans() -> Optional[List[Plan]]:
 
 
 def create_checkout_session_metadata(user_id: str, 
-                                     checkout_session_id: str,
+                                     radom_checkout_session_id: str,
                                      referral_id: Optional[str] = None) -> None:
     checkout_session_metadata = checkout_session_metadata_col.find_one({"user_id": user_id})
 
@@ -100,14 +100,14 @@ def create_checkout_session_metadata(user_id: str,
         # Create a new payment account
         checkout_session_metadata = {
             "user_id": user_id,
-            "checkout_session_id": checkout_session_id,
+            "radom_checkout_session_id": radom_checkout_session_id,
             "referral_id": referral_id
         }
         checkout_session_metadata_col.insert_one(checkout_session_metadata)
     else:
         # Update the existing payment account
         update_fields = {
-            "checkout_session_id": checkout_session_id
+            "radom_checkout_session_id": radom_checkout_session_id
         }
         
         if referral_id is not None:
@@ -119,9 +119,9 @@ def create_checkout_session_metadata(user_id: str,
         )
 
 
-def get_checkout_session_metadata(checkout_session_id: str) -> Optional[CheckoutSessionMetadata]:
+def get_checkout_session_metadata(radom_checkout_session_id: str) -> Optional[CheckoutSessionMetadata]:
     # Query the MongoDB collection to find one document by radom_product_id
-    result = checkout_session_metadata_col.find_one({"checkout_session_id": checkout_session_id})
+    result = checkout_session_metadata_col.find_one({"radom_checkout_session_id": radom_checkout_session_id})
     
     # If a result is found, convert it to a Plan instance
     if result:
