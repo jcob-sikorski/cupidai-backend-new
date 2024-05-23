@@ -64,11 +64,11 @@ def create_radom_checkout_session(
     
     url = "https://api.radom.com/checkout_session"
     
-    product = get_product(req.radom_product_id)
+    product = get_product(plan_id=req.plan_id)
 
     print(product)
 
-    print(req.radom_product_id)
+    print(req.plan_id)
 
     print(os.getenv('WEBAPP_DOMAIN'))
 
@@ -81,7 +81,7 @@ def create_radom_checkout_session(
     payload = {
         "lineItems": [
             {
-                "productId": req.radom_product_id,
+                "productId": product.radom_product_id,
                 "itemData": {
                     "name": product.name,
                     "description": product.description,
@@ -136,7 +136,7 @@ def create_radom_checkout_session(
         "chargeCustomerNetworkFee": True
     }
 
-    if os.getenv('MODE') == 'staging':
+    if os.getenv('MODE') == 'development' or os.getenv('MODE') == 'staging':
         payload["gateway"]["managed"]["methods"].append({
             "network": "SepoliaTestnet",
             "token": "0xa4fCE8264370437e718aE207805b4e6233638b9E",
@@ -160,8 +160,8 @@ def create_radom_checkout_session(
         
         if radom_checkout_session_id and checkout_session_url:
             radom_create_checkout_session_metadata(user.user_id,
-                                             radom_checkout_session_id,
-                                             req.referral_id)
+                                                   radom_checkout_session_id,
+                                                   req.referral_id)
         
         return response_data
     except requests.exceptions.RequestException as e:
@@ -214,6 +214,8 @@ async def webhook(request: Request) -> None:
         referral_id = internal_metadata.referral_id if internal_metadata else None
 
         create_payment_account(user_id=user_id, 
+                               paypal_plan_id=None,
+                               paypal_subscription_id=None,
                                radom_subscription_id=radom_subscription_id, 
                                radom_checkout_session_id=radom_checkout_session_id, 
                                amount=amount,
@@ -234,11 +236,11 @@ async def webhook(request: Request) -> None:
     elif event_type == "subscriptionExpired":
         radom_subscription_id = body_dict.get("eventData", {}).get("newSubscription", {}).get("subscriptionId")
 
-        remove_payment_account(radom_subscription_id)
+        remove_payment_account(radom_subscription_id=radom_subscription_id)
     elif event_type == "subscriptionCancelled":
         radom_subscription_id = body_dict.get("eventData", {}).get("subscriptionCancelled", {}).get("subscriptionId")
 
-        remove_payment_account(radom_subscription_id)
+        remove_payment_account(radom_subscription_id=radom_subscription_id)
 
     return
 
@@ -325,34 +327,27 @@ def cancel_plan(user: Account) -> bool:
 def get_available_plans(user: Account) -> Optional[Dict[str, Any]]:
     # Retrieve available plans
     plans = data.get_available_plans()
-
-    print(plans)
     
     # Get the current plan for the user
     current_plan = get_current_plan(user)
-
-    print(current_plan)
-    
-    # Extract the current plan ID
-    current_plan_id = current_plan.radom_product_id if current_plan else None
     
     # Return the result as a dictionary
     return {
         "plans": plans,
-        "radom_product_id": current_plan_id
+        "active_plan_id": current_plan.plan_id if current_plan else None
     }
 
 
 def radom_create_checkout_session_metadata(user_id: str, 
-                                     paypal_checkout_session_id: Optional[str] = None,
-                                     radom_checkout_session_id: Optional[str] = None,
-                                     referral_id: Optional[str] = None) -> None:
+                                           paypal_checkout_session_id: Optional[str] = None,
+                                           radom_checkout_session_id: Optional[str] = None,
+                                           referral_id: Optional[str] = None) -> None:
     
     
     return data.radom_create_checkout_session_metadata(user_id=user_id, 
-                                                 paypal_checkout_session_id=paypal_checkout_session_id,
-                                                 radom_checkout_session_id=radom_checkout_session_id,
-                                                 referral_id=referral_id)
+                                                       paypal_checkout_session_id=paypal_checkout_session_id,
+                                                       radom_checkout_session_id=radom_checkout_session_id,
+                                                       referral_id=referral_id)
     
 
 def get_checkout_session_metadata(paypal_checkout_session_id: Optional[str] = None,
@@ -361,10 +356,12 @@ def get_checkout_session_metadata(paypal_checkout_session_id: Optional[str] = No
                                               radom_checkout_session_id)
 
 
-def get_product(paypal_plan_id: str,
-                radom_product_id: str) -> Optional[Plan]:
-    return data.get_product(paypal_plan_id,
-                            radom_product_id)
+def get_product(paypal_plan_id: Optional[str] = None,
+                radom_product_id: Optional[str] = None,
+                plan_id: Optional[str] = None) -> Optional[Plan]:
+    return data.get_product(paypal_plan_id, 
+                            radom_product_id,
+                            plan_id)
 
 
 def create_payment_account(user_id: str, 
@@ -400,12 +397,13 @@ def get_payment_account(user_id: str,
                                     paypal_subscription_id,
                                     radom_checkout_session_id)
 
-# TODO: it should also rely on paypal
+
 def get_current_plan(user: Account) -> Optional[Plan]:
+    print("GETTING CURRENT PLAN")
     payment_account = get_payment_account(user.user_id)
 
-    print(payment_account)
+    print("PAYMENT ACCOUNT", payment_account)
 
     if payment_account:
-        return get_product(payment_account.paypal_plan_id, 
-                           payment_account.radom_product_id)
+        return get_product(paypal_plan_id=payment_account.paypal_plan_id,
+                           radom_product_id=payment_account.radom_product_id)

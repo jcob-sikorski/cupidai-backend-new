@@ -18,6 +18,7 @@ class TermsOfService(BaseModel):
     date_accepted: datetime | None = None
 
 class Plan(BaseModel):
+    plan_id: str
     name: str | None = None
     tag: str | None = None
     description: Optional[str] = None
@@ -29,11 +30,10 @@ class Plan(BaseModel):
     paypal_checkout_link: str | None = None
 
 class ProductRequest(BaseModel):
-    paypal_plan_id: Optional[str] = None
-    radom_product_id: Optional[str] = None
+    plan_id: str
 
 class CheckoutSessionRequest(BaseModel):
-    radom_product_id: str
+    plan_id: str
     referral_id: Optional[str] = None
 
 class CheckoutSessionMetadata(BaseModel):

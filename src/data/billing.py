@@ -113,15 +113,16 @@ def accept_tos(user_id: str) -> None:
     
 
 def get_available_plans() -> Optional[List[Plan]]:
+    print("GETTING AVAILABLE PLANS")
     results = plan_col.find()
     plans = [Plan(**result) for result in results]
     return plans
 
 
 def radom_create_checkout_session_metadata(user_id: str, 
-                                     paypal_checkout_session_id: Optional[str] = None,
-                                     radom_checkout_session_id: Optional[str] = None,
-                                     referral_id: Optional[str] = None) -> None:
+                                           paypal_checkout_session_id: Optional[str] = None,
+                                           radom_checkout_session_id: Optional[str] = None,
+                                           referral_id: Optional[str] = None) -> None:
     
     checkout_session_metadata = checkout_session_metadata_col.find_one({"user_id": user_id})
 
@@ -172,15 +173,22 @@ def get_checkout_session_metadata(paypal_checkout_session_id: Optional[str] = No
 
 
 def get_product(paypal_plan_id: Optional[str] = None,
-                random_product_id: Optional[str] = None) -> Optional[Plan]:
+                radom_product_id: Optional[str] = None,
+                plan_id: Optional[str] = None) -> Optional[Plan]:
+    
     query = {}
     if paypal_plan_id:
-        query["paypal_plan_id"] = paypal_plan_id
-    elif random_product_id:
-        query["radom_product_id"] = random_product_id
+        query = {"paypal_plan_id": paypal_plan_id}
+    elif radom_product_id:
+        query = {"radom_product_id": radom_product_id}
+    else:
+        query = {"plan_id": plan_id}
 
+    print("GETTING PRODUCT")
     # Query the MongoDB collection based on the non-None field
     result = plan_col.find_one(query)
+
+    print("PRODUCT", result)
     
     # If a result is found, convert it to a Plan instance
     if result:

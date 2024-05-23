@@ -39,18 +39,21 @@ async def create_radom_checkout_session(req: CheckoutSessionRequest,
 async def webhook(request: Request) -> None:
     radom_verification_key = request.headers.get("radom-verification-key")
     
-    if radom_verification_key != os.getenv("RADOM_WEBHOOK_SECRET"):
+    if ((os.getenv("MODE") == 'production' and radom_verification_key != os.getenv("RADOM_WEBHOOK_SECRET")) or
+        (os.getenv("MODE") == 'staging' and radom_verification_key != os.getenv("RADOM_WEBHOOK_SECRET")) or
+        (os.getenv("MODE") == 'development' and radom_verification_key != os.getenv("RADOM_WEBHOOK_SECRET"))):
         raise HTTPException(
             status_code=401,
             detail="Invalid verification key"
         )
+
 
     return await service.webhook(request)
 
 
 @router.post('/paypal-webhook')
 async def paypal_webhook(request: Request) -> None:
-    return await service.webhook(request)
+    return await service.paypal_webhook(request)
 
 # TODO: internals should check which payment provider user used
 @router.post("/cancel-plan", status_code=201)  # Attempts to cancel current plan of the user
@@ -60,11 +63,18 @@ async def cancel_plan(user: Annotated[Account, Depends(account_service.get_curre
 
 @router.get("/available-plans", status_code=200)  # Retrieves all available plans
 async def get_available_plans(user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[Dict[str, Any]]:
-    return service.get_available_plans(user)
+    plans = service.get_available_plans(user)
+
+    print(plans)
+
+    return plans
 
 
 @router.get("/product", status_code=200)  # Retrieves the specific product
-async def get_product(req: ProductRequest,
+async def get_product(plan_id: str,
                       _: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[Plan]:
-    return service.get_product(req.paypal_plan_id,
-                               req.radom_product_id)
+    product = service.get_product(plan_id=plan_id)
+
+    print(product)
+
+    return product
