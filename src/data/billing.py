@@ -3,8 +3,7 @@ from typing import Optional, List
 from datetime import datetime
 
 from model.billing import (PaymentAccount, TermsOfService, Plan,
-                           CheckoutSessionMetadata)
-# from model.team import Team
+                           CheckoutSessionMetadata, StripeAccount)
 
 # from .init import payment_account_col, team_col, tos_col, plan_col
 from .init import (payment_account_col, tos_col, plan_col, 

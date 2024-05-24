@@ -20,7 +20,6 @@ from model.billing import (Plan, CheckoutSessionRequest,
                            StripeItem)
 
 import service.account as account_service
-import service.email as email_service
 import service.referral as referral_service
 
 # The library needs to be configured with your account's secret key.
@@ -34,8 +33,8 @@ endpoint_secret = os.getenv('STRIPE_ENDPOINT_SECRET')
 def has_permissions(feature: str, 
                     user: Account) -> bool:
     
-    if account_service.is_insider(user):
-        return True
+    # if account_service.is_insider(user):
+    #     return True
     
     payment_account = get_payment_account(user.user_id)
 
@@ -201,8 +200,8 @@ def create_stripe_checkout_session(req: CheckoutSessionRequest,
     print(product)
     
     session = stripe.checkout.Session.create(
-        success_url=f"http://{os.getenv('WEBAPP_DOMAIN')}/dashboard",
-        cancel_url=f"https://{os.getenv('WEBAPP_DOMAIN')}/billing",
+        success_url=f"{os.getenv('WEBAPP_DOMAIN')}/dashboard",
+        cancel_url=f"{os.getenv('WEBAPP_DOMAIN')}/billing",
         line_items=[
             {
                 "price": product.stripe_price_id, 
@@ -382,17 +381,36 @@ async def stripe_webhook(item: StripeItem,
     
     print("EVENT: ", event)
 
-    if event.get('type') == 'customer.subscription.created':
+    if event.get('type') == 'checkout.session.completed':
         session = event.get('data', {}).get('object', {})
         
         if session.get('mode') == 'subscription':
-            create_stripe_account(session.get('client_reference_id'), session.get('customer'))
-
+            user_id = session.get('client_reference_id')
+            customer_id = session.get('customer')
+            stripe_subscription_id = session.get('subscription')
+            stripe_price_id = stripe.Subscription.retrieve(stripe_subscription_id) \
+                                                 .get('items', {})                 \
+                                                 .get('data', [{}])[0]             \
+                                                 .get('price', {})                 \
+                                                 .get('id')
+            
             referral_id = session.get('metadata', {}).get('referral_id')
+
+            create_stripe_account(user_id, customer_id)
+
+            create_payment_account(user_id=user_id, 
+                                   stripe_price_id=stripe_price_id,
+                                   stripe_subscription_id=stripe_subscription_id,
+                                   paypal_plan_id=None,
+                                   paypal_subscription_id=None,
+                                   radom_subscription_id=None, 
+                                   radom_checkout_session_id=None, 
+                                   amount=session.get("amount_total", 0) / 100,
+                                   radom_product_id=None,
+                                   referral_id=referral_id)
             if referral_id:
                 referral = referral_service.get_referral(referral_id)
-                if referral:
-                    referral_service.update_for_host(referral, session.get("amount_total", 0) / 100)
+                referral_service.update_for_host(referral, session.get("amount_total", 0) / 100)
 
     elif event.get('type') == 'customer.subscription.deleted':
         subscription = event.get('data', {}).get('object', {})
@@ -423,7 +441,7 @@ def create_stripe_account(user_id: str,
 def cancel_plan(user: Account) -> bool:
     payment_account = get_payment_account(user.user_id)
 
-    if payment_account and payment_account.radom_subscription_id:
+    if payment_account and payment_account.stripe_subscription_id:
         customer_id = data.get_customer_id(user.user_id)
         
         if customer_id:
@@ -499,8 +517,8 @@ def get_product(stripe_price_id: Optional[str] = None,
 
 
 def create_payment_account(user_id: str, 
-                           stripe_price_id,
-                           stripe_subcription_id,
+                           stripe_price_id: str,
+                           stripe_subscription_id: str,
                            paypal_plan_id: str,
                            paypal_subscription_id: str,
                            radom_subscription_id: str,
@@ -511,7 +529,7 @@ def create_payment_account(user_id: str,
     
     return data.create_payment_account(user_id, 
                                        stripe_price_id,
-                                       stripe_subcription_id,
+                                       stripe_subscription_id,
                                        paypal_plan_id,
                                        paypal_subscription_id,
                                        radom_subscription_id,

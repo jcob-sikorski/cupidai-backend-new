@@ -39,7 +39,6 @@ class ProductRequest(BaseModel):
     plan_id: str
 
 class CheckoutSessionRequest(BaseModel):
-    price_id: str
     plan_id: str
     referral_id: Optional[str] = None
 
