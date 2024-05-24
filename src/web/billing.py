@@ -49,17 +49,17 @@ async def webhook(request: Request) -> None:
 
     return await service.webhook(request)
 
-@router.post('/stripe-webhook')
-async def stripe_webhook(item: StripeItem, 
-                  request: Request) -> None:
-    return await service.stripe_webhook(item, request)
+# @router.post('/stripe-webhook')
+# async def stripe_webhook(item: StripeItem, 
+#                   request: Request) -> None:
+#     return await service.stripe_webhook(item, request)
 
 
-@router.post('/create-stripe-checkout-session', status_code=200)
-async def create_stripe_checkout_session(req: CheckoutSessionRequest,
-                                         user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> None:
-    return service.create_stripe_checkout_session(req,
-                                                  user)
+# @router.post('/create-stripe-checkout-session', status_code=200)
+# async def create_stripe_checkout_session(req: CheckoutSessionRequest,
+#                                          user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> None:
+#     return service.create_stripe_checkout_session(req,
+#                                                   user)
 
 @router.post('/paypal-webhook')
 async def paypal_webhook(request: Request) -> None:

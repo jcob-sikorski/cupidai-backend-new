@@ -34,6 +34,7 @@ def get_db():
     payment_account_col = db['PaymentAccount']
     stripe_account_col = db['StripeAccount']
     checkout_session_metadata_col = db['CheckoutSessionMetadata']
+    paypal_checkout_session_metadata_col = db['PaypalCheckoutSessionMetadata']
     tos_col = db['TermsOfService']
     plan_col = db['Plan']
     usage_history_col = db['UsageHistory']
@@ -58,6 +59,7 @@ def get_db():
             payment_account_col, 
             stripe_account_col,
             checkout_session_metadata_col, 
+            paypal_checkout_session_metadata_col,
             tos_col, 
             plan_col, 
             usage_history_col, 
@@ -81,6 +83,7 @@ def get_db():
  payment_account_col, 
  stripe_account_col,
  checkout_session_metadata_col, 
+ paypal_checkout_session_metadata_col,
  tos_col, 
  plan_col, 
  usage_history_col, 

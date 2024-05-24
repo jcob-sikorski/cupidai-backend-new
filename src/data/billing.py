@@ -12,6 +12,7 @@ from .init import (payment_account_col, tos_col, plan_col,
                    paypal_checkout_session_metadata_col)
 
 def create_payment_account(user_id: str, 
+                           stripe_customer_id: str,
                            stripe_price_id: str,
                            stripe_subscription_id: str,
                            paypal_plan_id: str,
@@ -27,6 +28,7 @@ def create_payment_account(user_id: str,
         # Create a new payment account
         payment_account = {
             "user_id": user_id,
+            "stripe_customer_id": stripe_customer_id,
             "stripe_price_id": stripe_price_id,
             "stripe_subscription_id": stripe_subscription_id,
             "paypal_plan_id": paypal_plan_id,
@@ -41,6 +43,7 @@ def create_payment_account(user_id: str,
     else:
         # Update the existing payment account
         update_fields = {
+            "stripe_customer_id": stripe_customer_id,
             "stripe_price_id": stripe_price_id,
             "stripe_subscription_id": stripe_subscription_id,
             "paypal_plan_id": paypal_plan_id,
@@ -125,26 +128,13 @@ def get_payment_account(user_id: str,
     return None
 
 
-def create_stripe_account(user_id: str, customer_id: str):
-    # If Stripe account does not exist then add it to the collection
-    stripe_account = stripe_account_col.find_one({"user_id": user_id})
-
-    if not stripe_account:
-        stripe_account = StripeAccount(
-            user_id=user_id,
-            customer_id=customer_id
-        )
-        stripe_account_col.insert_one(stripe_account.dict())
-
-
-def get_customer_id(user_id: str) -> Optional[str]:
+def get_stripe_customer_id(user_id: str) -> Optional[str]:
     print("GETTING CUSTOMER ID FROM MONGODB")
 
-    result = stripe_account_col.find_one({"user_id": user_id})
+    result = payment_account_col.find_one({"user_id": user_id})
     if result is not None:
         print("PARSING RESPONSE TO MODEL")
-        stripe_account = StripeAccount(**result)
-        return stripe_account.customer_id
+        return payment_account_col.customer_id
     return None
 
 

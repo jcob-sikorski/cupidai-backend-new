@@ -5,6 +5,7 @@ from datetime import datetime
 
 class PaymentAccount(BaseModel):
     user_id: str | None = None
+    stripe_customer_id: str | None = None
     stripe_price_id: str | None = None
     stripe_subscription_id: str | None = None
     paypal_plan_id: str | None = None
@@ -15,9 +16,9 @@ class PaymentAccount(BaseModel):
     amount: float | None = None
     referral_id: Optional[str] = None
 
-class StripeAccount(BaseModel):
-    user_id: str
-    customer_id: str
+# class StripeAccount(BaseModel):
+#     user_id: str
+#     customer_id: str
 
 class TermsOfService(BaseModel):
     user_id: str | None = None
@@ -47,9 +48,9 @@ class CheckoutSessionMetadata(BaseModel):
     user_id: str
     referral_id: Optional[str] = None
 
-class StripeItem(BaseModel):
-    data: Optional[dict] = None
-    type: Optional[str] = None
+# class StripeItem(BaseModel):
+#     data: Optional[dict] = None
+#     type: Optional[str] = None
 
 class PaypalCheckoutSessionMetadata(BaseModel):
     paypal_subscription_id: str
