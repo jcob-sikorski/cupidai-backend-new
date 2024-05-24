@@ -245,12 +245,19 @@ async def webhook(request: Request) -> None:
     return
 
 async def paypal_webhook(request: Request) -> None:
+    # Read the request body
     body = await request.body()
-    body_str = body.decode()
+        
+    # Decode the body content to a string
+    body_str = body.decode("utf-8")
 
-    body_dict = json.loads(body_str)
+    # Parse the JSON string into a dictionary
+    body_dict = dict(json.loads(body_str))
 
-    event_type = body_dict.get("eventType")
+    # Print the parsed JSON for debugging
+    print(body_dict)
+
+    event_type = body_dict.get('event_type')
     
     if event_type is None:
         raise HTTPException(status_code=400, detail="Event type not found in request")
