@@ -10,6 +10,8 @@ import json
 
 import stripe
 
+import base64
+
 from stripe.error import InvalidRequestError
 
 import data.billing as data
@@ -258,7 +260,7 @@ async def webhook(request: Request) -> None:
             if item.get("key") == "user_id":
                 user_id = item.get("value")
 
-        internal_metadata = get_checkout_session_metadata(radom_checkout_session_id)
+        internal_metadata = get_radom_checkout_session_metadata(radom_checkout_session_id)
         referral_id = internal_metadata.referral_id if internal_metadata else None
 
         create_payment_account(user_id=user_id, 
@@ -342,15 +344,63 @@ async def paypal_webhook(request: Request) -> None:
                                amount=amount,
                                radom_product_id=None,
                                referral_id=referral_id)
-        
-        if referral_id:
-            referral = referral_service.get_referral(referral_id)
+
+    # Handle subscription events
+    elif event_type == "PAYMENT.SALE.COMPLETED":
+        print("PAYMENT.SALE.DENIED:", body)
+
+        sale_id = body_dict.get("resource", {}).get("id", "")
+
+        paypal_sale = get_paypal_sale(sale_id)
+
+        paypal_subscription_id = paypal_sale.get("billing_agreement_id", "")
+
+        paypal_checkout_session_metadata = get_paypal_checkout_session_metadata(paypal_subscription_id)
+
+        if paypal_checkout_session_metadata and paypal_checkout_session_metadata.referral_id:
+            referral = referral_service.get_referral(paypal_checkout_session_metadata.referral_id)
 
             referral_service.update_for_host(referral,
                                              amount)
+
+    # Handle subscription events
+    elif event_type == "PAYMENT.SALE.DENIED":
+        print("PAYMENT.SALE.DENIED:", body)
+
+        sale_id = body_dict.get("resource", {}).get("id", "")
+
+        paypal_sale = get_paypal_sale(sale_id)
+
+        paypal_subscription_id = paypal_sale.get("billing_agreement_id", "")
+
+        remove_payment_account(paypal_subscription_id)
+
+    # Handle subscription events
+    elif event_type == "PAYMENT.SALE.REFUNDED":
+        print("PAYMENT.SALE.REFUNDED:", body)
+
+        sale_id = body_dict.get("resource", {}).get("id", "")
+
+        paypal_sale = get_paypal_sale(sale_id)
+
+        paypal_subscription_id = paypal_sale.get("billing_agreement_id", "")
+
+        remove_payment_account(paypal_subscription_id)
+
+    # Handle subscription events
+    elif event_type == "PAYMENT.SALE.REVERSED":
+        print("PAYMENT.SALE.REVERSED:", body)
+
+        sale_id = body_dict.get("resource", {}).get("id", "")
+
+        paypal_sale = get_paypal_sale(sale_id)
+
+        paypal_subscription_id = paypal_sale.get("billing_agreement_id", "")
+
+        remove_payment_account(paypal_subscription_id)
     
     elif event_type == "BILLING.SUBSCRIPTION.CANCELLED":
-        print("Subscription was created:", body)
+        print("Subscription was cancelled", body)
 
         paypal_subscription_id = body_dict.get("resource", {}) \
                                           .get("id", {})
@@ -362,6 +412,43 @@ async def paypal_webhook(request: Request) -> None:
     
     return {"status": "success"}
 
+def get_paypal_access_token():
+    credentials = f"{os.getenv('PAYPAL_CLIENT_ID')}:{'PAYPAL_CLIENT_SECRET'}"
+    encoded_credentials = base64.b64encode(credentials.encode()).decode()
+
+    # Set up the headers and data for the request
+    headers = {
+        'Authorization': f'Basic {encoded_credentials}',
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+
+    data = {
+        'grant_type': 'client_credentials'
+    }
+
+    # Make the POST request
+    response = requests.post('https://api-m.sandbox.paypal.com/v1/oauth2/token', headers=headers, data=data)
+
+    # Check the response
+    if response.status_code == 200:
+        return response.json()['access_token']
+    else:
+        print("Error getting access token:", response.status_code, response.json())
+
+async def get_paypal_sale(paypal_sale_id: str) -> Optional[Dict]:
+    paypal_access_token = get_paypal_access_token()
+
+    headers = {
+        'Authorization': f'Bearer {paypal_access_token}',  # Replace YOUR_ACCESS_TOKEN with your actual access token
+    }
+
+    response = requests.get(f'https://api-m.sandbox.paypal.com/v1/payments/sale/{paypal_sale_id}', headers=headers)
+
+    if response.status_code == 200:
+        sale_details = response.json()
+        print("Sale details:", sale_details)
+    else:
+        print("Failed to retrieve sale details. Status code:", response.status_code)
 
 async def stripe_webhook(item: StripeItem, 
                          request: Request) -> None:
@@ -492,6 +579,18 @@ def get_available_plans(user: Account) -> Optional[Dict[str, Any]]:
         "active_plan_id": current_plan.plan_id if current_plan else None
     }
 
+def paypal_create_checkout_session_metadata(user_id: str, 
+                                            paypal_subscription_id: Optional[str] = None,
+                                            referral_id: Optional[str] = None) -> None:
+    
+    return data.paypal_create_checkout_session_metadata(user_id=user_id, 
+                                                        paypal_subscription_id=paypal_subscription_id,
+                                                        referral_id=referral_id)
+    
+
+def get_paypal_checkout_session_metadata(paypal_subscription_id: Optional[str] = None) -> Optional[CheckoutSessionMetadata]:
+    return data.get_paypal_checkout_session_metadata(paypal_subscription_id)
+
 
 def radom_create_checkout_session_metadata(user_id: str, 
                                            radom_checkout_session_id: Optional[str] = None,
@@ -502,8 +601,8 @@ def radom_create_checkout_session_metadata(user_id: str,
                                                        referral_id=referral_id)
     
 
-def get_checkout_session_metadata(radom_checkout_session_id: Optional[str] = None) -> Optional[CheckoutSessionMetadata]:
-    return data.get_checkout_session_metadata(radom_checkout_session_id)
+def get_radom_checkout_session_metadata(radom_checkout_session_id: Optional[str] = None) -> Optional[CheckoutSessionMetadata]:
+    return data.get_radom_checkout_session_metadata(radom_checkout_session_id)
 
 
 def get_product(stripe_price_id: Optional[str] = None,
@@ -546,7 +645,7 @@ def remove_payment_account(stripe_subscription_id: Optional[str] = None,
                                        paypal_subscription_id,
                                        radom_subscription_id)
 
-# TODO: this should probably accept paypal specific critical args
+
 def get_payment_account(user_id: str, 
                         stripe_subscription_id: Optional[str] = None,
                         paypal_subscription_id: str = None,

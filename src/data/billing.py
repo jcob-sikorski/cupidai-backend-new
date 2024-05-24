@@ -3,11 +3,13 @@ from typing import Optional, List
 from datetime import datetime
 
 from model.billing import (PaymentAccount, TermsOfService, Plan,
-                           CheckoutSessionMetadata, StripeAccount)
+                           CheckoutSessionMetadata, StripeAccount, 
+                           PaypalCheckoutSessionMetadata)
 
 # from .init import payment_account_col, team_col, tos_col, plan_col
 from .init import (payment_account_col, tos_col, plan_col, 
-                   checkout_session_metadata_col, stripe_account_col)
+                   checkout_session_metadata_col, stripe_account_col, 
+                   paypal_checkout_session_metadata_col)
 
 def create_payment_account(user_id: str, 
                            stripe_price_id: str,
@@ -171,6 +173,52 @@ def get_available_plans() -> Optional[List[Plan]]:
     return plans
 
 
+def paypal_create_checkout_session_metadata(user_id: str, 
+                                            paypal_subscription_id: Optional[str] = None,
+                                            referral_id: Optional[str] = None) -> None:
+    
+    paypal_checkout_session_metadata = paypal_checkout_session_metadata_col.find_one({
+        "paypal_subscription_id": paypal_subscription_id
+    })
+
+    if not paypal_checkout_session_metadata:
+        # Create a new payment account
+        paypal_checkout_session_metadata = {
+            "user_id": user_id,
+            "paypal_subscription_id": paypal_subscription_id,
+            "referral_id": referral_id
+        }
+        paypal_checkout_session_metadata_col.insert_one(paypal_checkout_session_metadata)
+    else:
+        # Update the existing payment account
+        update_fields = {
+            "paypal_subscription_id": paypal_subscription_id
+        }
+        
+        if referral_id is not None:
+            update_fields["referral_id"] = referral_id
+
+        update_fields = {key: value for key, value in update_fields.items() if value is not None}
+        
+        payment_account_col.update_one(
+            {"user_id": user_id},
+            {"$set": update_fields}
+        )
+
+
+def get_paypal_checkout_session_metadata(paypal_subscription_id: Optional[str] = None) -> Optional[CheckoutSessionMetadata]:
+    result = checkout_session_metadata_col.find_one({
+        "paypal_subscription_id": paypal_subscription_id
+    })
+    
+    # If a result is found, convert it to a Plan instance
+    if result:
+        return PaypalCheckoutSessionMetadata(**result)
+    
+    # If no result is found, return None
+    return None
+
+
 def radom_create_checkout_session_metadata(user_id: str, 
                                            radom_checkout_session_id: Optional[str] = None,
                                            referral_id: Optional[str] = None) -> None:
@@ -202,7 +250,7 @@ def radom_create_checkout_session_metadata(user_id: str,
         )
 
 
-def get_checkout_session_metadata(radom_checkout_session_id: Optional[str] = None) -> Optional[CheckoutSessionMetadata]:
+def get_radom_checkout_session_metadata(radom_checkout_session_id: Optional[str] = None) -> Optional[CheckoutSessionMetadata]:
 
     query = {}
     if radom_checkout_session_id:

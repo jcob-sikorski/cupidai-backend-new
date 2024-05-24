@@ -50,3 +50,8 @@ class CheckoutSessionMetadata(BaseModel):
 class StripeItem(BaseModel):
     data: Optional[dict] = None
     type: Optional[str] = None
+
+class PaypalCheckoutSessionMetadata(BaseModel):
+    paypal_subscription_id: str
+    user_id: str
+    referral_id: Optional[str] = None

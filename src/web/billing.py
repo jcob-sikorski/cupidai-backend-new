@@ -61,10 +61,10 @@ async def create_stripe_checkout_session(req: CheckoutSessionRequest,
     return service.create_stripe_checkout_session(req,
                                                   user)
 
-
 @router.post('/paypal-webhook')
 async def paypal_webhook(request: Request) -> None:
     return await service.paypal_webhook(request)
+
 
 # TODO: internals should check which payment provider user used
 @router.post("/cancel-plan", status_code=201)  # Attempts to cancel current plan of the user
