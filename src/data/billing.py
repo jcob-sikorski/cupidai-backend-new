@@ -2,13 +2,17 @@ from typing import Optional, List
 
 from datetime import datetime
 
-from model.billing import PaymentAccount, TermsOfService, Plan, CheckoutSessionMetadata
+from model.billing import (PaymentAccount, TermsOfService, Plan,
+                           CheckoutSessionMetadata)
 # from model.team import Team
 
 # from .init import payment_account_col, team_col, tos_col, plan_col
-from .init import payment_account_col, tos_col, plan_col, checkout_session_metadata_col
+from .init import (payment_account_col, tos_col, plan_col, 
+                   checkout_session_metadata_col, stripe_account_col)
 
 def create_payment_account(user_id: str, 
+                           stripe_price_id: str,
+                           stripe_subscription_id: str,
                            paypal_plan_id: str,
                            paypal_subscription_id: str,
                            radom_subscription_id: str,
@@ -22,6 +26,8 @@ def create_payment_account(user_id: str,
         # Create a new payment account
         payment_account = {
             "user_id": user_id,
+            "stripe_price_id": stripe_price_id,
+            "stripe_subscription_id": stripe_subscription_id,
             "paypal_plan_id": paypal_plan_id,
             "paypal_subscription_id": paypal_subscription_id,
             "radom_subscription_id": radom_subscription_id,
@@ -34,6 +40,8 @@ def create_payment_account(user_id: str,
     else:
         # Update the existing payment account
         update_fields = {
+            "stripe_price_id": stripe_price_id,
+            "stripe_subscription_id": stripe_subscription_id,
             "paypal_plan_id": paypal_plan_id,
             "paypal_subscription_id": paypal_subscription_id,
             "radom_subscription_id": radom_subscription_id,
@@ -52,9 +60,21 @@ def create_payment_account(user_id: str,
             {"$set": update_fields}
         )
 
-def remove_payment_account(paypal_subscription_id: Optional[str] = None,
+def remove_payment_account(stripe_subscription_id: Optional[str] = None,
+                           paypal_subscription_id: Optional[str] = None,
                            radom_subscription_id: Optional[str] = None) -> None:
     
+    # Find the payment account
+    payment_account = payment_account_col.find_one({
+        "stripe_subscription_id": stripe_subscription_id
+        })
+
+    if payment_account:
+        payment_account_col.delete_one({
+            "stripe_subscription_id": stripe_subscription_id
+            })
+        return
+
     # Find the payment account
     payment_account = payment_account_col.find_one({
         "paypal_subscription_id": paypal_subscription_id
@@ -64,6 +84,7 @@ def remove_payment_account(paypal_subscription_id: Optional[str] = None,
         payment_account_col.delete_one({
             "paypal_subscription_id": paypal_subscription_id
             })
+        return
 
         
     # Find the payment account
@@ -75,13 +96,19 @@ def remove_payment_account(paypal_subscription_id: Optional[str] = None,
         payment_account_col.delete_one({
             "radom_subscription_id": radom_subscription_id
         })
+        return
 
-# TODO: it should also accept paypal specific critical args
+
 def get_payment_account(user_id: str, 
+                        stripe_subscription_id: Optional[str] = None,
                         paypal_subscription_id: str = None,
                         radom_checkout_session_id: str = None) -> Optional[PaymentAccount]:
     
-    if paypal_subscription_id is not None:
+    if stripe_subscription_id is not None:
+        result = payment_account_col.find_one({
+            "stripe_subscription_id": stripe_subscription_id
+        })
+    elif paypal_subscription_id is not None:
         result = payment_account_col.find_one({
             "paypal_subscription_id": paypal_subscription_id
         })
@@ -94,6 +121,29 @@ def get_payment_account(user_id: str,
         payment_account = PaymentAccount(**result)
         return payment_account
 
+    return None
+
+
+def create_stripe_account(user_id: str, customer_id: str):
+    # If Stripe account does not exist then add it to the collection
+    stripe_account = stripe_account_col.find_one({"user_id": user_id})
+
+    if not stripe_account:
+        stripe_account = StripeAccount(
+            user_id=user_id,
+            customer_id=customer_id
+        )
+        stripe_account_col.insert_one(stripe_account.dict())
+
+
+def get_customer_id(user_id: str) -> Optional[str]:
+    print("GETTING CUSTOMER ID FROM MONGODB")
+
+    result = stripe_account_col.find_one({"user_id": user_id})
+    if result is not None:
+        print("PARSING RESPONSE TO MODEL")
+        stripe_account = StripeAccount(**result)
+        return stripe_account.customer_id
     return None
 
 
@@ -114,13 +164,15 @@ def accept_tos(user_id: str) -> None:
 
 def get_available_plans() -> Optional[List[Plan]]:
     print("GETTING AVAILABLE PLANS")
+
     results = plan_col.find()
+
     plans = [Plan(**result) for result in results]
+
     return plans
 
 
 def radom_create_checkout_session_metadata(user_id: str, 
-                                           paypal_checkout_session_id: Optional[str] = None,
                                            radom_checkout_session_id: Optional[str] = None,
                                            referral_id: Optional[str] = None) -> None:
     
@@ -130,7 +182,6 @@ def radom_create_checkout_session_metadata(user_id: str,
         # Create a new payment account
         checkout_session_metadata = {
             "user_id": user_id,
-            "paypal_checkout_session_id": paypal_checkout_session_id,
             "radom_checkout_session_id": radom_checkout_session_id,
             "referral_id": referral_id
         }
@@ -138,7 +189,6 @@ def radom_create_checkout_session_metadata(user_id: str,
     else:
         # Update the existing payment account
         update_fields = {
-            "paypal_checkout_session_id": paypal_checkout_session_id,
             "radom_checkout_session_id": radom_checkout_session_id
         }
         
@@ -153,12 +203,9 @@ def radom_create_checkout_session_metadata(user_id: str,
         )
 
 
-def get_checkout_session_metadata(paypal_checkout_session_id: Optional[str] = None,
-                                  radom_checkout_session_id: Optional[str] = None) -> Optional[CheckoutSessionMetadata]:
+def get_checkout_session_metadata(radom_checkout_session_id: Optional[str] = None) -> Optional[CheckoutSessionMetadata]:
 
     query = {}
-    if paypal_checkout_session_id:
-        query["paypal_checkout_session_id"] = paypal_checkout_session_id
     if radom_checkout_session_id:
         query["radom_checkout_session_id"] = radom_checkout_session_id
 
@@ -172,12 +219,15 @@ def get_checkout_session_metadata(paypal_checkout_session_id: Optional[str] = No
     return None
 
 
-def get_product(paypal_plan_id: Optional[str] = None,
+def get_product(stripe_price_id: Optional[str] = None,
+                paypal_plan_id: Optional[str] = None,
                 radom_product_id: Optional[str] = None,
                 plan_id: Optional[str] = None) -> Optional[Plan]:
     
     query = {}
-    if paypal_plan_id:
+    if stripe_price_id:
+        query = {"stripe_price_id": stripe_price_id}
+    elif paypal_plan_id:
         query = {"paypal_plan_id": paypal_plan_id}
     elif radom_product_id:
         query = {"radom_product_id": radom_product_id}

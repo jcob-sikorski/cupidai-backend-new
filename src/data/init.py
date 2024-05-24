@@ -32,6 +32,7 @@ def get_db():
     invite_col = db['Invite']
     password_reset_col = db['PasswordReset']
     payment_account_col = db['PaymentAccount']
+    stripe_account_col = db['StripeAccount']
     checkout_session_metadata_col = db['CheckoutSessionMetadata']
     tos_col = db['TermsOfService']
     plan_col = db['Plan']
@@ -55,6 +56,7 @@ def get_db():
             invite_col, 
             password_reset_col, 
             payment_account_col, 
+            stripe_account_col,
             checkout_session_metadata_col, 
             tos_col, 
             plan_col, 
@@ -77,6 +79,7 @@ def get_db():
  invite_col, 
  password_reset_col, 
  payment_account_col, 
+ stripe_account_col,
  checkout_session_metadata_col, 
  tos_col, 
  plan_col, 
