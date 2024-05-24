@@ -2,35 +2,32 @@ from typing import Optional, List
 
 from datetime import datetime
 
+from model.account import Account
+
 from model.billing import (PaymentAccount, TermsOfService, Plan,
-                           CheckoutSessionMetadata, StripeAccount, 
+                           CheckoutSessionMetadata,
                            PaypalCheckoutSessionMetadata)
 
-# from .init import payment_account_col, team_col, tos_col, plan_col
 from .init import (payment_account_col, tos_col, plan_col, 
-                   checkout_session_metadata_col, stripe_account_col, 
-                   paypal_checkout_session_metadata_col)
+                   checkout_session_metadata_col,
+                   paypal_checkout_session_metadata_col,
+                   paypal_uuid_col)
 
 def create_payment_account(user_id: str, 
-                           stripe_customer_id: str,
-                           stripe_price_id: str,
-                           stripe_subscription_id: str,
-                           paypal_plan_id: str,
-                           paypal_subscription_id: str,
-                           radom_subscription_id: str,
-                           radom_checkout_session_id: str,
-                           amount: float,
-                           radom_product_id: str,
+                           paypal_plan_id: Optional[str] = None,
+                           paypal_subscription_id: Optional[str] = None,
+                           radom_subscription_id: Optional[str] = None,
+                           radom_checkout_session_id: Optional[str] = None,
+                           amount: Optional[float] = None,
+                           radom_product_id: Optional[str] = None,
                            referral_id: Optional[str] = None) -> None:
+
     payment_account = payment_account_col.find_one({"user_id": user_id})
 
     if not payment_account:
         # Create a new payment account
         payment_account = {
             "user_id": user_id,
-            "stripe_customer_id": stripe_customer_id,
-            "stripe_price_id": stripe_price_id,
-            "stripe_subscription_id": stripe_subscription_id,
             "paypal_plan_id": paypal_plan_id,
             "paypal_subscription_id": paypal_subscription_id,
             "radom_subscription_id": radom_subscription_id,
@@ -43,9 +40,6 @@ def create_payment_account(user_id: str,
     else:
         # Update the existing payment account
         update_fields = {
-            "stripe_customer_id": stripe_customer_id,
-            "stripe_price_id": stripe_price_id,
-            "stripe_subscription_id": stripe_subscription_id,
             "paypal_plan_id": paypal_plan_id,
             "paypal_subscription_id": paypal_subscription_id,
             "radom_subscription_id": radom_subscription_id,
@@ -64,29 +58,16 @@ def create_payment_account(user_id: str,
             {"$set": update_fields}
         )
 
-def remove_payment_account(stripe_subscription_id: Optional[str] = None,
-                           paypal_subscription_id: Optional[str] = None,
+def remove_payment_account(user_id,
                            radom_subscription_id: Optional[str] = None) -> None:
-    
     # Find the payment account
     payment_account = payment_account_col.find_one({
-        "stripe_subscription_id": stripe_subscription_id
+        "user_id": user_id
         })
 
     if payment_account:
         payment_account_col.delete_one({
-            "stripe_subscription_id": stripe_subscription_id
-            })
-        return
-
-    # Find the payment account
-    payment_account = payment_account_col.find_one({
-        "paypal_subscription_id": paypal_subscription_id
-        })
-
-    if payment_account:
-        payment_account_col.delete_one({
-            "paypal_subscription_id": paypal_subscription_id
+            "user_id": user_id
             })
         return
 
@@ -104,15 +85,10 @@ def remove_payment_account(stripe_subscription_id: Optional[str] = None,
 
 
 def get_payment_account(user_id: str, 
-                        stripe_subscription_id: Optional[str] = None,
                         paypal_subscription_id: str = None,
                         radom_checkout_session_id: str = None) -> Optional[PaymentAccount]:
-    
-    if stripe_subscription_id is not None:
-        result = payment_account_col.find_one({
-            "stripe_subscription_id": stripe_subscription_id
-        })
-    elif paypal_subscription_id is not None:
+
+    if paypal_subscription_id is not None:
         result = payment_account_col.find_one({
             "paypal_subscription_id": paypal_subscription_id
         })
@@ -128,15 +104,28 @@ def get_payment_account(user_id: str,
     return None
 
 
-def get_stripe_customer_id(user_id: str) -> Optional[str]:
-    print("GETTING CUSTOMER ID FROM MONGODB")
+def paypal_obtain_uuid(user_id: str,
+                       uuid: str) -> Optional[str]:
+    result = paypal_uuid_col.insert_one({
+        "user_id": user_id,
+        "uuid": uuid
+    })
 
-    result = payment_account_col.find_one({"user_id": user_id})
     if result is not None:
-        print("PARSING RESPONSE TO MODEL")
-        return payment_account_col.customer_id
+        return uuid
+    
     return None
 
+
+def get_paypal_user_id_from_uuid(uuid: str) -> Optional[str]:
+    result = paypal_uuid_col.find_one({
+        "uuid": uuid
+    })
+
+    if result is not None:
+        return result.get('user_id')
+    
+    return None
 
 def accept_tos(user_id: str) -> None:
     # Get the current date and time
@@ -255,16 +244,12 @@ def get_radom_checkout_session_metadata(radom_checkout_session_id: Optional[str]
     # If no result is found, return None
     return None
 
-
-def get_product(stripe_price_id: Optional[str] = None,
-                paypal_plan_id: Optional[str] = None,
+def get_product(paypal_plan_id: Optional[str] = None,
                 radom_product_id: Optional[str] = None,
                 plan_id: Optional[str] = None) -> Optional[Plan]:
     
     query = {}
-    if stripe_price_id:
-        query = {"stripe_price_id": stripe_price_id}
-    elif paypal_plan_id:
+    if paypal_plan_id:
         query = {"paypal_plan_id": paypal_plan_id}
     elif radom_product_id:
         query = {"radom_product_id": radom_product_id}

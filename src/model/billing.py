@@ -5,9 +5,9 @@ from datetime import datetime
 
 class PaymentAccount(BaseModel):
     user_id: str | None = None
-    stripe_customer_id: str | None = None
-    stripe_price_id: str | None = None
-    stripe_subscription_id: str | None = None
+    # stripe_customer_id: str | None = None
+    # stripe_price_id: str | None = None
+    # stripe_subscription_id: str | None = None
     paypal_plan_id: str | None = None
     paypal_subscription_id: str | None = None
     radom_product_id: str | None = None
@@ -31,7 +31,7 @@ class Plan(BaseModel):
     description: Optional[str] = None
     features: List[str] | None = None
     price: float | None = None
-    stripe_price_id: str | None = None
+    # stripe_price_id: str | None = None
     radom_product_id: str | None = None
     paypal_plan_id: str | None = None
     paypal_checkout_link: str | None = None

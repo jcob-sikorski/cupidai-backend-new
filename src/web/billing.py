@@ -9,7 +9,7 @@ from fastapi import HTTPException
 import os
 
 from model.account import Account
-from model.billing import Plan, CheckoutSessionRequest, StripeItem
+from model.billing import Plan, CheckoutSessionRequest
 
 from service import account as account_service
 import service.billing as service
@@ -47,26 +47,18 @@ async def webhook(request: Request) -> None:
         )
 
 
-    return await service.webhook(request)
-
-# @router.post('/stripe-webhook')
-# async def stripe_webhook(item: StripeItem, 
-#                   request: Request) -> None:
-#     return await service.stripe_webhook(item, request)
-
-
-# @router.post('/create-stripe-checkout-session', status_code=200)
-# async def create_stripe_checkout_session(req: CheckoutSessionRequest,
-#                                          user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> None:
-#     return service.create_stripe_checkout_session(req,
-#                                                   user)
+    return await service.radom_webhook(request)
 
 @router.post('/paypal-webhook')
 async def paypal_webhook(request: Request) -> None:
     return await service.paypal_webhook(request)
 
 
-# TODO: internals should check which payment provider user used
+@router.get("/paypal/obtain-uuid", status_code=200)  # Links user id with generated uuid which then is passed as custom_id in paypal button
+async def paypal_obtain_uuid(user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[str]:
+    return service.paypal_obtain_uuid(user)
+
+
 @router.post("/cancel-plan", status_code=201)  # Attempts to cancel current plan of the user
 async def cancel_plan(user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> bool:
     return service.cancel_plan(user)
