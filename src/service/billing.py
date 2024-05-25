@@ -282,19 +282,8 @@ async def paypal_webhook(request: Request) -> None:
     #                                          amount)
 
     # Handle subscription events
-    elif event_type == "PAYMENT.SALE.DENIED":
-        print("PAYMENT.SALE.DENIED:", body)
-
-        custom_id = body_dict.get("resource", {}) \
-                              .get("custom", {})
-        
-        user_id = get_paypal_user_id_from_uuid(custom_id)
-
-        remove_payment_account(user_id)
-
-    # Handle subscription events
     elif event_type == "PAYMENT.SALE.REFUNDED" or event_type == "PAYMENT.SALE.REVERSED" or \
-         event_type == "BILLING.SUBSCRIPTION.CANCELLED":
+         event_type == "PAYMENT.SALE.DENIED" or event_type == "BILLING.SUBSCRIPTION.CANCELLED":
         
         print("PAYMENT.SALE.REFUNDED:", body)
 
@@ -338,7 +327,7 @@ def get_paypal_access_token():
     }
 
     # Make the POST request
-    response = requests.post('https://api-m.sandbox.paypal.com/v1/oauth2/token', headers=headers, data=data)
+    response = requests.post(f"{os.getenv('PAYPAL_DOMAIN')}/oauth2/token", headers=headers, data=data)
 
     # Check the response
     if response.status_code == 200:
@@ -349,7 +338,7 @@ def get_paypal_access_token():
 
 
 def fetch_subscription_details(subscription_id: str, access_token: str):
-    url = f'https://api-m.paypal.com/v1/billing/subscriptions/{subscription_id}'
+    url = f"{os.getenv('PAYPAL_DOMAIN')}/billing/subscriptions/{subscription_id}"
     headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -390,10 +379,10 @@ def cancel_plan(user: Account) -> bool:
         }
 
         data = {
-            "reason": reason
+            "reason": ""
         }
 
-        url = f'https://api-m.paypal.com/v1/billing/subscriptions/{subscription_id}/cancel'
+        url = f"{os.getenv('PAYPAL_DOMAIN')}/billing/subscriptions/{subscription_id}/cancel"
 
         response = requests.post(url, headers=headers, json=data)
 
