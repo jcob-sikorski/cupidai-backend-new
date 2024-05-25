@@ -317,7 +317,14 @@ def get_paypal_user_id_from_uuid(uuid: str) -> Optional[Account]:
     return data.get_paypal_user_id_from_uuid(uuid)
 
 def get_paypal_access_token():
-    credentials = f"{os.getenv('PAYPAL_CLIENT_ID')}:{'PAYPAL_CLIENT_SECRET'}"
+    client_id = os.getenv("PAYPAL_CLIENT_ID")
+    client_secret = os.getenv("PAYPAL_CLIENT_SECRET")
+
+    print(client_id)
+    print(client_secret)
+
+    # Encode CLIENT_ID:CLIENT_SECRET in Base64
+    credentials = f"{client_id}:{client_secret}"
     encoded_credentials = base64.b64encode(credentials.encode()).decode()
 
     # Set up the headers and data for the request
@@ -339,14 +346,66 @@ def get_paypal_access_token():
     else:
         print("Error getting access token:", response.status_code, response.json())
 
-# TODO: create branching which based on the radom 
-#       or paypal fires specific request
+
+
+def fetch_subscription_details(subscription_id: str, access_token: str):
+    url = f'https://api-m.paypal.com/v1/billing/subscriptions/{subscription_id}'
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': f'Bearer {access_token}',
+    }
+    response = requests.get(url, headers=headers)
+    return response
+
+
 def cancel_plan(user: Account) -> bool:
+    access_token = get_paypal_access_token()
+    print("ACCESS TOKEN", access_token)
+
     payment_account = get_payment_account(user.user_id)
 
-    print("PAYMENT ACCOUNT: ", payment_account)
+    payment_account = get_payment_account(user.user_id)
+    if payment_account and hasattr(payment_account, 'paypal_subscription_id'):
+        subscription_id = payment_account.paypal_subscription_id
+        print("Subscription ID:", subscription_id)
+
+        access_token = get_paypal_access_token()
+        print("ACCESS TOKEN", access_token)
+
+        if access_token is None:
+            print("Failed to obtain access token.")
+            return False
+
+        # Fetch subscription details to verify existence
+        details_response = fetch_subscription_details(subscription_id, access_token)
+        if details_response.status_code != 200:
+            print(f'Failed to fetch subscription details for {subscription_id}. Response: {details_response.text}')
+            return False
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': f'Bearer {access_token}',
+        }
+
+        data = {
+            "reason": reason
+        }
+
+        url = f'https://api-m.paypal.com/v1/billing/subscriptions/{subscription_id}/cancel'
+
+        response = requests.post(url, headers=headers, json=data)
+
+        print(response)
+        if response.status_code == 204:
+            print(f'Subscription {subscription_id} cancelled successfully.')
+            return True
+        else:
+            print(f'Failed to cancel subscription {subscription_id}. Response: {response.text}')
+            return False
         
-    if payment_account and payment_account.radom_subscription_id:
+    elif payment_account and payment_account.radom_subscription_id:
         url = f"https://api.radom.com/subscription/{payment_account.radom_subscription_id}/cancel"
 
         headers = {

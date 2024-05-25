@@ -256,11 +256,8 @@ def get_product(paypal_plan_id: Optional[str] = None,
     else:
         query = {"plan_id": plan_id}
 
-    print("GETTING PRODUCT")
     # Query the MongoDB collection based on the non-None field
     result = plan_col.find_one(query)
-
-    print("PRODUCT", result)
     
     # If a result is found, convert it to a Plan instance
     if result:
