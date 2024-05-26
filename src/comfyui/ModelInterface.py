@@ -155,7 +155,7 @@ class ModelInterface():
             self.efficient_loader["206"]["inputs"]["positive"] = ["222", 0]
 
         print(f"LORA ENABLED: {lora_enabled}")
-        if sum(lora_enabled) > 0:
+        if lora_enabled.count(True) > 0:
             self.efficient_loader["206"]["inputs"]["lora_stack"] = ["207", 0]
 
     def connect_ksampler_efficient1(self,
@@ -302,7 +302,7 @@ def generate_workflow(settings: Settings,
         model_interface.choose_output_size(int1=settings.basic_width, 
                                            int2=settings.basic_height)
 
-        if sum(settings.lora_enabled) > 0:
+        if settings.lora_enabled.count(True) > 0:
             print("CONNECTING LORA")
             model_interface.connect_lora(count=settings.lora_count, 
                                          models=settings.lora_models, 
