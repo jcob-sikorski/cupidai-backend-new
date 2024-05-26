@@ -20,7 +20,7 @@ async def webhook(message: Message) -> None:
 
 
 class FacefusionGenerateRequest(BaseModel):
-    source_uris: List[str]
+    source_uris: str
     target_uri: str
   
 
@@ -31,4 +31,5 @@ async def generate(req: FacefusionGenerateRequest,
                    background_tasks: BackgroundTasks) -> str:
     return service.run_video_faceswap(req.source_uris, 
                                       req.target_uri,
-                                      user)
+                                      user,
+                                      background_tasks)

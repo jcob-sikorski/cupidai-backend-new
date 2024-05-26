@@ -29,21 +29,27 @@ def webhook(message: Message) -> None:
 def send_post_request(url: str, headers: dict, payload: dict) -> None:
     requests.post(url, headers=headers, json=payload)
 
-def run_video_faceswap(source_uris: List[str],
+def run_video_faceswap(source_uris: str,
                        target_uri: str,
                        user: Account,
                        background_tasks: BackgroundTasks) -> str:
     
     if billing_service.has_permissions("Realistic AI Content Deepfake", user):
+        print("RUNNING VIDEO FACESWAP")
         photo_file_formats = ['jpeg', 'png', 'heic']
 
+        source_uris = [source_uris]
+        
+        print('CHECKING PHOTO FILE FORMATS')
         for source_uri in source_uris:
             deepfake_service.check_file_formats(source_uri, photo_file_formats)
 
         video_file_formats = ['mov', 'mp4', 'quicktime']
 
+        print('CHECKING VIDEO FILE FORMATS')
         deepfake_service.check_file_formats(target_uri, video_file_formats)
 
+        print('GETTING FILE FORMATS')
         file_formats = deepfake_service.get_file_formats(source_uris+[target_uri])
 
         print("FILE FORMATS: ", file_formats)
@@ -52,6 +58,7 @@ def run_video_faceswap(source_uris: List[str],
 
         job_id = str(uuid4())
 
+        print("CREATING A MESSAGE")
         deepfake_service.create_message(user_id=user.user_id, 
                                         status="started", 
                                         facefusion_source_uris=source_uris,

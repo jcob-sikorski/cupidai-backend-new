@@ -24,9 +24,9 @@ import service.usage_history as usage_history_service
 
 # Generate signature
 def generate_msg_signature(client_id, 
-                                 timestamp, 
-                                 nonce, 
-                                 msg_encrypt):
+                           timestamp, 
+                           nonce, 
+                           msg_encrypt):
     sorted_str = ''.join(sorted([client_id, str(timestamp), str(nonce), msg_encrypt]))
 
     hash_obj = hashlib.sha1(sorted_str.encode())
@@ -35,8 +35,8 @@ def generate_msg_signature(client_id,
 
 # Decryption algorithm
 def generate_aes_decrypt(data_encrypt, 
-                               client_id, 
-                               client_secret) -> dict:
+                         client_id, 
+                         client_secret) -> dict:
     aes_key = client_secret.encode()
 
     # Ensure IV is 16 bytes long
@@ -92,8 +92,12 @@ def initiate_photo_faceswap(source_uri: str,
                             user: Account) -> Optional[Message]:
     
     if billing_service.has_permissions("Realistic AI Content Deepfake", user):
-        deepfake_service.check_file_formats(source_uri)
-        deepfake_service.check_file_formats(target_uri)
+        valid_formats = ['jpeg', 'png', 'heic']
+
+        deepfake_service.check_file_formats(target_uri,
+                                            valid_formats)
+        deepfake_service.check_file_formats(source_uri,
+                                            valid_formats)
                        
         source_opts = face_detect(source_uri)
         target_opts = face_detect(target_uri)
@@ -135,16 +139,16 @@ def run_photo_faceswap(source_uri: str, # photo of the old face from the photo
         },],
       "face_enhance": 1,
       "modifyImage": target_uri, # photo to modify
-      "webhookUrl": f"{os.getenv('ROOT_DOMAIN')}/deepfake/webhook"
+      "webhookUrl": f"{os.getenv('ROOT_DOMAIN')}/akool-deepfake/webhook"
     }
 
+    print("SENDING REQUEST TO AKOOL")
     try:
         message = send_post_request(url,
                                     headers,
                                     payload,
                                     source_uri,
                                     target_uri,
-                                    None,
                                     user_id)
         
         return message

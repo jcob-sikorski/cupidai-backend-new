@@ -26,7 +26,7 @@ class AkoolGenerateRequest(BaseModel):
     source_uri: str
     target_uri: str
 
-# TODO:~accept array of target uris and return an array of job_ids?? how would this work?
+
 @router.post("/generate", status_code=201)
 async def generate(req: AkoolGenerateRequest,
                    user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[Message]:
