@@ -283,7 +283,8 @@ async def generate(settings: Settings,
             'image_formats': image_formats,
             'message_id': message_id,
             'settings_id': settings_id,
-            'user_id': user.user_id
+            'user_id': user.user_id,
+            'refinement_enabled': settings.refinement_enabled
         }
 
         background_tasks.add_task(send_post_request, url, headers, payload)
