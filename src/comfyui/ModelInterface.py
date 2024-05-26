@@ -92,31 +92,31 @@ class ModelInterface():
         self.efficient_loader["206"]["inputs"]["empty_latent_height"][0] = "325" if image_path else "327"
         self.efficient_loader["206"]["inputs"]["empty_latent_height"][1] = 1 if image_path else 0
 
-    def connect_lora(self, 
-                    count: int, 
-                    models: List[str], 
-                    strengths: List[str], 
-                    enabled: List[bool]):
-        """
-        ################# CONNECT LORA #################
-        (Optional) Connect lora to Efficient Loader
-        1. Connect lora to lora_stack in Efficient Loader
-        """
-        # Initialize lora_count to 0
-        self.lora_stacker["207"]["inputs"]["lora_count"] = 0
+    # def connect_lora(self, 
+    #                 count: int, 
+    #                 models: List[str], 
+    #                 strengths: List[str], 
+    #                 enabled: List[bool]):
+    #     """
+    #     ################# CONNECT LORA #################
+    #     (Optional) Connect lora to Efficient Loader
+    #     1. Connect lora to lora_stack in Efficient Loader
+    #     """
+    #     # Initialize lora_count to 0
+    #     self.lora_stacker["207"]["inputs"]["lora_count"] = 0
 
-        lora_connected = False
+    #     lora_connected = False
 
-        for i in range(count):  # Assuming 'enabled' has 4 elements.
-            if enabled[i]:
-                index = i + 1
-                self.lora_stacker["207"]["inputs"][f"lora_name_{index}"] = models[i]
-                self.lora_stacker["207"]["inputs"][f"model_str_{index}"] = strengths[i]
-                self.lora_stacker["207"]["inputs"]["lora_count"] += 1
-                lora_connected = True
+    #     for i in range(count):  # Assuming 'enabled' has 4 elements.
+    #         if enabled[i]:
+    #             index = i + 1
+    #             self.lora_stacker["207"]["inputs"][f"lora_name_{index}"] = models[i]
+    #             self.lora_stacker["207"]["inputs"][f"model_str_{index}"] = strengths[i]
+    #             self.lora_stacker["207"]["inputs"]["lora_count"] += 1
+    #             lora_connected = True
 
-        if lora_connected:
-            self.used_components.add("lora_stacker")
+    #     if lora_connected:
+    #         self.used_components.add("lora_stacker")
 
     def connect_random_prompts(self, 
                                positive_prompt: str):
@@ -159,9 +159,9 @@ class ModelInterface():
         if random_prompts_enabled:
             self.efficient_loader["206"]["inputs"]["positive"] = ["222", 0]
 
-        print(f"LORA ENABLED: {lora_enabled}")
-        if any(lora_enabled):
-            self.efficient_loader["206"]["inputs"]["lora_stack"] = ["207", 0]
+        # print(f"LORA ENABLED: {lora_enabled}")
+        # if any(lora_enabled):
+        #     self.efficient_loader["206"]["inputs"]["lora_stack"] = ["207", 0]
 
     def connect_ksampler_efficient1(self,
                                     steps: int, 
@@ -307,12 +307,12 @@ def generate_workflow(settings: Settings,
         model_interface.choose_output_size(int1=settings.basic_width, 
                                            int2=settings.basic_height)
 
-        if any(settings.lora_enabled):
-            print("CONNECTING LORA")
-            model_interface.connect_lora(count=settings.lora_count, 
-                                         models=settings.lora_models, 
-                                         strengths=settings.lora_strengths, 
-                                         enabled=settings.lora_enabled)
+        # if any(settings.lora_enabled):
+        #     print("CONNECTING LORA")
+        #     model_interface.connect_lora(count=settings.lora_count, 
+        #                                  models=settings.lora_models, 
+        #                                  strengths=settings.lora_strengths, 
+        #                                  enabled=settings.lora_enabled)
 
         if settings.pos_prompt_enabled:
             print("CONNECTING RANDOM PROMPTS")
