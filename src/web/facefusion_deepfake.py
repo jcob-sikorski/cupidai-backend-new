@@ -1,33 +1,34 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, BackgroundTasks
 
 from pydantic import BaseModel
 
-from typing import Optional, Annotated
+from typing import Annotated, List
 
 from model.account import Account
 from model.deepfake import Message
 
 from service import account as account_service
-from service import akool_deepfake as service
+from service import facefusion_deepfake as service
 
 router = APIRouter(prefix="/facefusion-deepfake")
 
 @router.post("/webhook", status_code=200)
-async def webhook(response: dict) -> None:
+async def webhook(message: Message) -> None:
     print("FACEFUSION WEBHOOK ACTIVATED")
-    print(response)
-    service.webhook(response)
+    print(message)
+    service.webhook(message)
 
 
-class AkoolGenerateRequest(BaseModel):
-    source_uri: str
+class FacefusionGenerateRequest(BaseModel):
+    source_uris: List[str]
     target_uri: str
   
 
 # TODO: accept array of target uris and return an array of job_ids?? how would this work?
 @router.post("/generate", status_code=201)
-async def generate(req: AkoolGenerateRequest,
-                   user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[Message]:
-    return service.generate(req.source_uris, 
-                            req.target_uri,
-                            user)
+async def generate(req: FacefusionGenerateRequest,
+                   user: Annotated[Account, Depends(account_service.get_current_active_user)],
+                   background_tasks: BackgroundTasks) -> str:
+    return service.run_video_faceswap(req.source_uris, 
+                                      req.target_uri,
+                                      user)

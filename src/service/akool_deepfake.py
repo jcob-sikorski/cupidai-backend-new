@@ -88,8 +88,8 @@ def webhook(response: dict) -> None:
     
 
 def initiate_photo_faceswap(source_uri: str,
-                                  target_uri: str,
-                                  user: Account) -> Optional[Message]:
+                            target_uri: str,
+                            user: Account) -> Optional[Message]:
     
     if billing_service.has_permissions("Realistic AI Content Deepfake", user):
         deepfake_service.check_file_formats(source_uri)
@@ -100,10 +100,10 @@ def initiate_photo_faceswap(source_uri: str,
           
         try:
             message = run_photo_faceswap(source_uri,
-                                               target_uri,
-                                               source_opts,
-                                               target_opts,
-                                               user.user_id)
+                                         target_uri,
+                                         source_opts,
+                                         target_opts,
+                                         user.user_id)
 
             return message
         except ValueError:
@@ -112,10 +112,10 @@ def initiate_photo_faceswap(source_uri: str,
         raise HTTPException(status_code=403, detail="Upgrade your plan to unlock permissions.")
     
 def run_photo_faceswap(source_uri: str, # photo of the old face from the photo
-                             target_uri: str, # photo of the new face for the photo
-                             source_opts: str, # some params for the old face
-                             target_opts: str, # some params for the new face
-                             user_id: str) -> Optional[Message]:
+                       target_uri: str, # photo of the new face for the photo
+                       source_opts: str, # some params for the old face
+                       target_opts: str, # some params for the new face
+                       user_id: str) -> Optional[Message]:
     
     url = "https://openapi.akool.com/api/open/v3/faceswap/highquality/specifyimage"
 
@@ -140,12 +140,12 @@ def run_photo_faceswap(source_uri: str, # photo of the old face from the photo
 
     try:
         message = send_post_request(url,
-                                          headers,
-                                          payload,
-                                          source_uri,
-                                          target_uri,
-                                          None,
-                                          user_id)
+                                    headers,
+                                    payload,
+                                    source_uri,
+                                    target_uri,
+                                    None,
+                                    user_id)
         
         return message
     except ValueError:
@@ -154,11 +154,11 @@ def run_photo_faceswap(source_uri: str, # photo of the old face from the photo
     
 
 def send_post_request(url: str, 
-                            headers: dict, 
-                            payload: dict,
-                            source_uri: str,
-                            target_uri: str,
-                            user_id: str) -> Optional[Message]:
+                      headers: dict, 
+                      payload: dict,
+                      source_uri: str,
+                      target_uri: str,
+                      user_id: str) -> Optional[Message]:
     print("SENDING POST REQUEST")
     response = requests.post(url, headers=headers, json=payload)
 

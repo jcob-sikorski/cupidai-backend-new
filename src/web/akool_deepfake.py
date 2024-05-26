@@ -30,6 +30,6 @@ class AkoolGenerateRequest(BaseModel):
 @router.post("/generate", status_code=201)
 async def generate(req: AkoolGenerateRequest,
                    user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[Message]:
-    return service.generate(req.source_uri, 
-                            req.target_uri,
-                            user)
+    return service.initiate_photo_faceswap(req.source_uri, 
+                                           req.target_uri,
+                                           user)
