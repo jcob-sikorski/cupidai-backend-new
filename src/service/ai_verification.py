@@ -118,7 +118,30 @@ def create_prompt_string(prompt: Prompt) -> str:
     if prompt.width is not None and prompt.height is not None:
         prompt_string += f" --aspect {prompt.width}:{prompt.height}"
 
+    print(prompt_string)
+
     return prompt_string
+
+
+async def increase_speed(user: Account) -> None:
+    # Make a request to activate fast mode
+    fast_url = "https://api.mymidjourney.ai/api/v1/midjourney/commands"
+    fast_headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {os.getenv('MIDJOURNEY_TOKEN')}",
+    }
+    fast_data = {
+        "cmd": "fast",
+        "ref": user.user_id,
+        "webhookOverride": f"{os.getenv('ROOT_DOMAIN')}/midjourney/webhook"
+    }
+
+    async with httpx.AsyncClient() as client:
+        fast_resp = await client.post(fast_url, headers=fast_headers, json=fast_data)
+        print(f"Fast mode response status: {fast_resp.status_code}")
+        print(f"Fast mode response body: {fast_resp.text}")
+        if fast_resp.status_code != 200 or not fast_resp.json().get("success", False):
+            raise HTTPException(status_code=500, detail="Failed to activate fast mode.")
 
 
 async def imagine(prompt: Prompt, 
@@ -148,7 +171,7 @@ async def imagine(prompt: Prompt,
         if check is not True:
             print(check)
             raise HTTPException(status_code=400, detail=check)
-
+        
         print("CREATING PAYLOAD")
         url = "https://api.mymidjourney.ai/api/v1/midjourney/imagine"
         headers = {
@@ -161,7 +184,7 @@ async def imagine(prompt: Prompt,
             "webhookOverride": f"{os.getenv('ROOT_DOMAIN')}/midjourney/webhook"
         }
 
-        print(data)
+        # await increase_speed(user)
 
         async with httpx.AsyncClient() as client:
             print("MAKING REQUEST TO MIDJOURNEY IMAGINE ENDPOINT API")
@@ -169,7 +192,7 @@ async def imagine(prompt: Prompt,
             response_data = Response.parse_raw(resp.text)
 
             if response_data.success:
-                usage_history_service.update("AI Dating App Verification", user.user_id)
+                usage_history_service.update("ai_verification", user.user_id)
 
             if resp.status_code != 200 or response_data.error:
                 raise HTTPException(status_code=500, detail="Prompt execution failed.")
@@ -204,8 +227,7 @@ async def action(messageId: str,
         "webhookOverride": f"{os.getenv('ROOT_DOMAIN')}/midjourney/webhook"
     }
 
-    print("DATA SENT TO MIDJOURNEY")
-    # print(data)
+    # await increase_speed(user)
 
     async with httpx.AsyncClient() as client:
         resp = await client.post(url, headers=headers, json=data)
