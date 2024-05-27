@@ -39,6 +39,5 @@ def get_history(user_id: str) -> List[Message]:
     results = midjourney_col.find({"ref": user_id})
 
     messages = [Message(**result) for result in results]
-    print(messages)
 
     return messages[::-1]

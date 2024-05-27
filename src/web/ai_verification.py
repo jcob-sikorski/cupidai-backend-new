@@ -31,12 +31,13 @@ async def imagine(prompt: Prompt,
 
 
 class ActionRequest(BaseModel):
-    messageId: str
     button: str
+    messageId: str
 
 @router.post("/action", status_code=201)  # Initiates a specific action
 async def action(req: ActionRequest, 
                  user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> None:
+    print("GOT A REQUEST FROM FRONTEND FOR ACTION")
     return await service.action(req.messageId, 
                                 req.button, 
                                 user)

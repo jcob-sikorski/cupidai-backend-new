@@ -141,11 +141,15 @@ async def imagine(prompt: Prompt,
         #   see docs: https://www.mymidjourney.ai/docs/commands                                                                                                 
         # - quality: --quality x    ; only accepts the values: .25, .5, and 1 for the current model. Larger values are rounded down to 1
 
-    if billing_service.has_permissions('ai_verification', user):
+    print("CHECKING PERMISSIONS")
+    if billing_service.has_permissions("AI Dating App Verification", user):
+        print("CHECKING PROMPT")
         check = check_prompt(prompt)
         if check is not True:
+            print(check)
             raise HTTPException(status_code=400, detail=check)
 
+        print("CREATING PAYLOAD")
         url = "https://api.mymidjourney.ai/api/v1/midjourney/imagine"
         headers = {
             "Content-Type": "application/json",
@@ -165,7 +169,7 @@ async def imagine(prompt: Prompt,
             response_data = Response.parse_raw(resp.text)
 
             if response_data.success:
-                usage_history_service.update('ai_verification', user.user_id)
+                usage_history_service.update("AI Dating App Verification", user.user_id)
 
             if resp.status_code != 200 or response_data.error:
                 raise HTTPException(status_code=500, detail="Prompt execution failed.")
@@ -182,7 +186,7 @@ async def action(messageId: str,
                  button: str, 
                  user: Account) -> None:
 
-    if not billing_service.has_permissions('ai_verification', user):
+    if not billing_service.has_permissions("AI Dating App Verification", user):
         raise HTTPException(status_code=403, detail="Upgrade your plan to unlock permissions.")
 
     if not midjourney_service.valid_button(messageId, button):
@@ -200,6 +204,9 @@ async def action(messageId: str,
         "webhookOverride": f"{os.getenv('ROOT_DOMAIN')}/midjourney/webhook"
     }
 
+    print("DATA SENT TO MIDJOURNEY")
+    # print(data)
+
     async with httpx.AsyncClient() as client:
         resp = await client.post(url, headers=headers, json=data)
         response_data = Response.parse_raw(resp.text)
@@ -210,7 +217,10 @@ async def action(messageId: str,
     if resp.status_code != 200 or response_data.error:
         raise HTTPException(status_code=400, detail="Action failed")
 
+    print("AI VERIF DATA SENT")
     print(response_data)
+
+    return response_data
 
 
 def add_account(social_account: SocialAccount,

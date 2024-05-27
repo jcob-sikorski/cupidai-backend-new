@@ -30,7 +30,7 @@ def create_message(user_id: Optional[str] = None,
         output_url=output_url,
         created_at=now
     )
-    
+
     result = deepfake_col.insert_one(message.dict())
     if not result.inserted_id:
         raise ValueError("Failed to create message.")
