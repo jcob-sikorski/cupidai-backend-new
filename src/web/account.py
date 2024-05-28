@@ -1,5 +1,7 @@
 from typing import Annotated, Optional
 
+from pydantic import BaseModel
+
 from fastapi import Depends, APIRouter, Path, HTTPException, Form
 from fastapi.security import OAuth2PasswordRequestForm
 
