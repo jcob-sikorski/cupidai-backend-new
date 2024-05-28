@@ -58,6 +58,8 @@ def get_file_formats(uploadcare_uris):
 
         file_formats.append(file_format)
 
+    print("FILE FORMATS: ", file_formats)
+
     return file_formats
 
 def create_message(user_id: Optional[str] = None,

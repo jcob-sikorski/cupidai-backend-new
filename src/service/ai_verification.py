@@ -133,7 +133,7 @@ def create_prompt_string(prompt: Prompt,
     prompt_string += f" {attributes_string}"
 
     # Add width and height as aspect ratio if both are provided
-    if prompt.width and prompt.width > 0 and prompt.height and prompt.height > 0:
+    if prompt.width and int(prompt.width) > 0 and prompt.height and int(prompt.height) > 0:
         prompt_string += f" --aspect {prompt.width}:{prompt.height}"
     
     if cref_cdn_url_list:
