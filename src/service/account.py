@@ -199,7 +199,7 @@ def request_one_time_link(email: str) -> None:
     #       the UI should send this request when user types new password
 
     # password_reset_link = f"{os.getenv('ROOT_DOMAIN')}/forgot-password/{password_reset_id}"
-    password_reset_link = f"{os.getenv('WEBAPP_DOMAIN')}/forgot-password/{password_reset_id}"
+    password_reset_link = f"{os.getenv('LANDING_DOMAIN')}/forgot-password/{password_reset_id}"
 
     now = datetime.now()
 
