@@ -2,7 +2,7 @@ from typing import Annotated, Optional
 
 from pydantic import BaseModel
 
-from fastapi import Depends, APIRouter, Path, HTTPException, Form
+from fastapi import Depends, APIRouter, HTTPException, Query
 from fastapi.security import OAuth2PasswordRequestForm
 
 from model.account import Account, Token
@@ -39,10 +39,11 @@ class ChangePasswordRequest(BaseModel):
     password_reset_id: str
     password: str
 
-@router.post("/account/change-password", status_code=200)
-async def change_password(req: ChangePasswordRequest) -> None:
-    return await service.change_password(req.password_reset_id, 
-                                         req.password)
+@router.post("/change-password", status_code=200)
+async def change_password(password_reset_id: str = Query(...), 
+                          password: str = Query(...)) -> None:
+    return await service.change_password(password_reset_id, 
+                                         password)
 
 
 @router.post("/request-one-time-link", status_code=200)

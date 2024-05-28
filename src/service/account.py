@@ -168,15 +168,18 @@ async def signup_ref(email: str,
             return jwt_token
 
 
-def change_password(password_reset_id: str, 
+async def change_password(password_reset_id: str, 
                     password: str) -> None:
+    print("GETTING PASWROD RESET")
     password_reset = data.get_password_reset(password_reset_id)
     
     if password_reset:
+        print("PASSWORD RESET IS NOT NULL")
         now = datetime.now()
         expiry_time = password_reset.created_at + timedelta(minutes=10)
 
         if password_reset.is_used == False and now <= expiry_time:
+            print("SETTING NEW PASWORD AND MAKING THE CURRENT LINK DISABLED")
             if data.set_new_password(get_password_hash(password), password_reset.user_id) \
                 and data.disable_password_reset(password_reset_id):
                 
