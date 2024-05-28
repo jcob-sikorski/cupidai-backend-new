@@ -171,7 +171,7 @@ async def imagine(prompt: Prompt,
 
     print("CHECKING PERMISSIONS")
     if billing_service.has_permissions("AI Dating App Verification", user):
-        print("CHECKING PROMPT")
+        print("CHECKING PROMPT PASSED: ", prompt)
         check = check_prompt(prompt)
         if check is not True:
             print(check)
@@ -272,6 +272,13 @@ def update_account(social_account: SocialAccount) -> None:
         data.update_account(social_account)
     except ValueError:
         raise HTTPException(status_code=500, detail="Failed to update social account")
+    
+
+def delete_account(account_id: str) -> None:
+    try:
+        data.delete_account(account_id)
+    except ValueError:
+        raise HTTPException(status_code=500, detail="Failed to delete social account")
 
 
 def get_accounts(user: Account) -> Optional[List[SocialAccount]]:

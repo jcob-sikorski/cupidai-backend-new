@@ -74,6 +74,12 @@ def get_accounts(user_id: str) -> Optional[List[SocialAccount]]:
     return social_accounts[::-1]
 
 
+def delete_account(account_id: str) -> None:
+    result = social_account_col.delete_one({"account_id": account_id})
+    if result.deleted_count == 0:
+        raise Exception("Account not found")
+
+
 def update_prompt(prompt: Prompt) -> None:
     update_query = {}
 
@@ -96,7 +102,5 @@ def get_prompts(user_id: str) -> Optional[List[Prompt]]:
     results = midjourney_prompt_col.find({"user_id": user_id})
 
     prompts = [Prompt(**result) for result in results]
-
-    print("PROMPTS: ", prompts)
 
     return prompts[::-1]

@@ -94,6 +94,15 @@ async def get(user: Annotated[Account, Depends(account_service.get_current_activ
     return service.get_accounts(user)
 
 
+@router.delete("/social-account/{account_id}", status_code=204)
+async def delete_account(account_id: str,
+                         _: Annotated[Account, Depends(account_service.get_current_active_user)]) -> None:
+    try:
+        service.delete_account(account_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.patch("/prompt", status_code=200)  # Updates prompt information
 async def update_prompt(prompt: Prompt,
                         _: Annotated[Account, Depends(account_service.get_current_active_user)]) -> None:
