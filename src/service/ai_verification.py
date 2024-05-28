@@ -108,22 +108,48 @@ def check_prompt(prompt: Prompt):
     return True
 
 
-def create_prompt_string(prompt: Prompt) -> str:
+def create_prompt_string(prompt: Prompt,
+                         img_ref_cdn_url_list: Optional[List[str]] = None,
+                         cref_cdn_url_list: Optional[List[str]] = None,
+                         sref_cdn_url_list: Optional[List[str]] = None) -> str:
     attributes = ["version", "style", "stop", "stylize", "seed"]
 
-    prompt_string = " ".join([f" --{attr} {getattr(prompt, attr)}" for attr in attributes if getattr(prompt, attr) is not None and getattr(prompt, attr) != ""])
+    # Start with an empty prompt string
+    prompt_string = ""
 
-    prompt_string = f"{prompt.prompt}"
+    # Add image references at the start of the prompt string
+    if img_ref_cdn_url_list:
+        prompt_string = " ".join(img_ref_cdn_url_list) + " "
 
-    if prompt.width is not None and prompt.height is not None:
+    # Add the main prompt
+    prompt_string += prompt.prompt if prompt.prompt else ""
+
+    # Add additional attributes
+    attributes_string = " ".join(
+        [f" --{attr} {getattr(prompt, attr)}" for attr in attributes if getattr(prompt, attr) is not None and getattr(prompt, attr) != ""]
+    )
+    
+    # Concatenate the attributes string to the prompt string
+    prompt_string += f" {attributes_string}"
+
+    # Add width and height as aspect ratio if both are provided
+    if prompt.width and prompt.width > 0 and prompt.height and prompt.height > 0:
         prompt_string += f" --aspect {prompt.width}:{prompt.height}"
+    
+    if cref_cdn_url_list:
+        cref_string = " ".join(cref_cdn_url_list)
+        prompt_string += f" --cref {cref_string}"
 
-    print(prompt_string)
+    if sref_cdn_url_list:
+        sref_string = " ".join(sref_cdn_url_list)
+        prompt_string += f" --sref {sref_string}"
+
+    print("CONSTRUCTED A PROMPT: ", prompt_string)
 
     return prompt_string
 
 
-async def increase_speed(user: Account) -> bool:
+async def increase_speed() -> bool:
     try:
         # Make a request to activate fast mode
         fast_url = "https://api.mymidjourney.ai/api/v1/midjourney/commands"
@@ -150,7 +176,10 @@ async def increase_speed(user: Account) -> bool:
 
 
 async def imagine(prompt: Prompt, 
-                  user: Account) -> None:
+                  user: Account,
+                  img_ref_cdn_url_list: Optional[List[str]] = None,
+                  cref_cdn_url_list: Optional[List[str]] = None,
+                  sref_cdn_url_list: Optional[List[str]] = None) -> None:
         # docs: (https://docs.midjourney.com/docs/)
         #
         # prompt: image_urls (optional) text_prompt parameters (--parameter1 --parameter2)
@@ -184,9 +213,12 @@ async def imagine(prompt: Prompt,
             "Authorization": f"Bearer {os.getenv('MIDJOURNEY_TOKEN')}",
         }
 
-        prompt_string = create_prompt_string(prompt)
+        prompt_string = create_prompt_string(prompt,
+                                             img_ref_cdn_url_list,
+                                             cref_cdn_url_list,
+                                             sref_cdn_url_list)
 
-        turbo = await increase_speed(user)
+        turbo = await increase_speed()
 
         if turbo:
             prompt_string += " --turbo"

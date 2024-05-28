@@ -2,8 +2,6 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-# TODO: add quality parameter in v2
-
 class Prompt(BaseModel):
     account_id: str | None = None
     prompt: str | None = None

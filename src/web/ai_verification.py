@@ -13,21 +13,22 @@ from service import ai_verification as service
 
 router = APIRouter(prefix="/ai-verification")
 
-# class FaceswapRequest(BaseModel):
-#     source_uri: str
-#     target_uri: str
-
-# @router.post("/faceswap", status_code=201)  # Initiates a face swap
-# async def faceswap(req: FaceswapRequest, 
-#                    user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> None:
-#     return await service.faceswap(req.source_uri,
-#                                   req.target_uri,
-#                                   user)
+class ImagineReq(BaseModel):
+    prompt: Prompt
+    img_ref_cdn_url_list: Optional[List[str]] = None
+    cref_cdn_url_list: Optional[List[str]] = None
+    sref_cdn_url_list: Optional[List[str]] = None
 
 @router.post("/imagine", status_code=201)  # Initiates an imagination process
-async def imagine(prompt: Prompt, 
+async def imagine(req: ImagineReq, 
                   user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> None:
-    return await service.imagine(prompt, user)
+   return await service.imagine(
+        req.prompt,
+        user,
+        req.img_ref_cdn_url_list,
+        req.cref_cdn_url_list,
+        req.sref_cdn_url_list
+    )
 
 
 class ActionRequest(BaseModel):
