@@ -22,7 +22,8 @@ def valid_button(messageId: str,
     if result is not None:
         message = Message(**result)
         
-        return button in message.buttons
+        if message and message.buttons:
+            return button in message.buttons
     
     return False
 
