@@ -53,6 +53,9 @@ def get_file_formats(uploadcare_uris):
         file_id = extract_id_from_uploadcare_uri(uri)
         file_format = get_file_format(file_id)
 
+        if file_format == "quicktime":
+            file_format = "mp4"
+
         file_formats.append(file_format)
 
     return file_formats
