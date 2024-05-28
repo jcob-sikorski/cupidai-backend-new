@@ -33,10 +33,14 @@ async def signup_ref(email: str,
                                     referral_id, 
                                     form_data)
 
-@router.post("/change-password", status_code=200)
-async def change_password(password_reset_id: str, 
-                          password: str) -> None:
-    return service.change_password(password_reset_id, password)
+class ChangePasswordRequest(BaseModel):
+    password_reset_id: str
+    password: str
+
+@router.post("/account/change-password", status_code=200)
+async def change_password(req: ChangePasswordRequest) -> None:
+    return await service.change_password(req.password_reset_id, 
+                                         req.password)
 
 
 @router.post("/request-one-time-link", status_code=200)
