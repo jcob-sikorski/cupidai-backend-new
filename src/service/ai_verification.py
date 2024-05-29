@@ -165,11 +165,25 @@ async def increase_speed() -> bool:
             fast_resp = await client.post(fast_url, headers=fast_headers, json=fast_data)
             print(f"Fast mode response status: {fast_resp.status_code}")
             print(f"Fast mode response body: {fast_resp.text}")
-            if fast_resp.status_code == 200 and fast_resp.json().get("success", False):
-                return True
-            else:
+
+            if fast_resp.status_code != 200:
                 print("Failed to activate fast mode.")
                 return False
+
+            response_json = fast_resp.json()
+            error_message = response_json.get("message", "")
+
+            if response_json.get("success", False):
+                if error_message:
+                    print(f"Fast mode activated but with error: {error_message}")
+                    if "turbo hours" in error_message.lower():
+                        print("Turbo hours have run out.")
+                        return False
+                return True
+            else:
+                print(f"Fast mode activation failed: {error_message}")
+                return False
+
     except Exception as e:
         print(f"Error increasing speed: {e}")
         return False
@@ -218,10 +232,10 @@ async def imagine(prompt: Prompt,
                                              cref_cdn_url_list,
                                              sref_cdn_url_list)
 
-        turbo = await increase_speed()
+        # turbo = await increase_speed()
 
-        if turbo:
-            prompt_string += " --turbo"
+        # if turbo:
+        #     prompt_string += " --turbo"
 
         data = {
             "prompt": prompt_string,
