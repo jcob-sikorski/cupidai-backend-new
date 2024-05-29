@@ -232,10 +232,10 @@ async def imagine(prompt: Prompt,
                                              cref_cdn_url_list,
                                              sref_cdn_url_list)
 
-        # turbo = await increase_speed()
+        turbo = await increase_speed()
 
-        # if turbo:
-        #     prompt_string += " --turbo"
+        if turbo:
+            prompt_string += " --turbo"
 
         data = {
             "prompt": prompt_string,
