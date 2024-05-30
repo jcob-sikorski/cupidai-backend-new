@@ -36,7 +36,10 @@ async def create_radom_checkout_session(req: CheckoutSessionRequest,
 
 @router.post('/webhook')
 async def webhook(request: Request) -> None:
+    print("\n\nhit radom webhook")
     radom_verification_key = request.headers.get("radom-verification-key")
+
+    print(f"got radom webhook verification key: {radom_verification_key}")
     
     if ((os.getenv("MODE") == 'production' and radom_verification_key != os.getenv("RADOM_WEBHOOK_SECRET")) or
         (os.getenv("MODE") == 'staging' and radom_verification_key != os.getenv("RADOM_WEBHOOK_SECRET")) or

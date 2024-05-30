@@ -77,6 +77,8 @@ def get_unpaid_earnings(user_id: str) -> float:
     return 0.00
 
 def get_referral(referral_id: str) -> Optional[Referral]:
+    print("gettting referral...")
+
     referral = referral_col.find_one({"referral_id": referral_id})
 
     if referral:

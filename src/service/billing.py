@@ -122,17 +122,17 @@ def create_radom_checkout_session(
         "Authorization": os.getenv('RADOM_ACCESS_TOKEN')
     }
 
+    print("\n\ncreating radom checkout session...")
     try:
         response = requests.request("POST", url, json=payload, headers=headers)
         response.raise_for_status()  # Raise an exception for any HTTP error
         response_data = response.json()
-        print("CHECKOUT SESSION RESPONSE")
-        print(response_data)
+        print(f"response from radom: {response_data}\n")
         
         radom_checkout_session_id = response_data.get('checkoutSessionId')
-        checkout_session_url = response_data.get('checkoutSessionUrl')
         
-        if radom_checkout_session_id and checkout_session_url:
+        if radom_checkout_session_id:
+            print("checkout session id is not null")
             radom_create_checkout_session_metadata(user.user_id,
                                                    radom_checkout_session_id,
                                                    req.referral_id)
@@ -144,46 +144,74 @@ def create_radom_checkout_session(
 
 
 async def radom_webhook(request: Request) -> None:
-    print("WEBHOOK REQUEST")
     body = await request.body()
     body_str = body.decode()
-    print(body_str)
 
     # Parse JSON string into a Python dictionary
     body_dict = json.loads(body_str)
+
+    print(f"radom request body: {body_dict}")
 
     # Extract the event type
     event_type = body_dict.get("eventType")
 
     if event_type == "newSubscription":
+        print("event type is new subscription")
+
+        print("getting radom_subscription_id...")
         radom_subscription_id = body_dict.get("eventData", {})          \
                                          .get("newSubscription", {})    \
                                          .get("subscriptionId")
+        
+        print(f"got radom_subscription_id: {radom_subscription_id}")
 
+        print("getting radom_checkout_session_id...")
         radom_checkout_session_id = body_dict.get("radomData", {})          \
                                              .get("checkoutSession", {})    \
                                              .get("checkoutSessionId")
+        
+        print(f"got radom_checkout_session_id: {radom_checkout_session_id}")
 
+        print("getting amount...")
         amount = body_dict.get("eventData", {})         \
                           .get("newSubscription", {})   \
                           .get("amount", {})
+        
+        print(f"got amount: {amount}")
 
+
+        print("getting radom_product_id...")
         radom_product_id = body_dict.get("eventData", {})           \
                                     .get("newSubscription", {})     \
                                     .get("tags", {})                \
                                     .get("productId")
+        
+        print(f"got radom_product_id: {radom_product_id}")
 
+        print("getting metadata...")
         metadata = body_dict.get("radomData", {})           \
                             .get("checkoutSession", {})     \
                             .get("metadata", [])
+        
+        print(f"got metadata: {metadata}")
 
+        print("trying to find user id in metadata...")
         user_id = None
         for item in metadata:
             if item.get("key") == "user_id":
+                print(f"found user id in metadata: {user_id}")
                 user_id = item.get("value")
 
+        if not user_id:
+            print(f"user_id is None: {user_id}")
+
         internal_metadata = get_radom_checkout_session_metadata(radom_checkout_session_id)
+
+        print(f"got radom checkout session metadata: {internal_metadata}")
+
         referral_id = internal_metadata.referral_id if internal_metadata else None
+
+        print(f"got referral_id from metadata: {referral_id}")
 
         create_payment_account(user_id=user_id, 
                                paypal_plan_id=None,
@@ -195,12 +223,24 @@ async def radom_webhook(request: Request) -> None:
                                referral_id=referral_id)
 
     elif event_type == "paymentTransactionConfirmed":
-        radom_checkout_session_id = body_dict.get("radomData", {}).get("checkoutSession", {}).get("checkoutSessionId")
+        print("event type is payment transaction confirmed")
+
+        print("getting radom checkout session id...")
+        radom_checkout_session_id = body_dict.get("radomData", {})          \
+                                              .get("checkoutSession", {})   \
+                                              .get("checkoutSessionId")
+
+        print(f"got radom_checkout_session_id: {radom_checkout_session_id}")
 
         payment_account = get_payment_account(user_id='',
                                               radom_checkout_session_id=radom_checkout_session_id)
+        
+        print("checking if payment account has referral id...")
         if payment_account and payment_account.referral_id:
+            print(f"payment account has referral id: {payment_account.referral_id}")
             referral = referral_service.get_referral(payment_account.referral_id)
+
+            print(f"got referral: {referral}")
 
             referral_service.update_for_host(referral,
                                              amount)
@@ -212,7 +252,20 @@ async def radom_webhook(request: Request) -> None:
     elif event_type == "subscriptionCancelled":
         radom_subscription_id = body_dict.get("eventData", {}).get("subscriptionCancelled", {}).get("subscriptionId")
 
-        remove_payment_account(radom_subscription_id=radom_subscription_id)
+        payment_account = get_payment_account(user_id='',
+                                              radom_checkout_session_id=radom_checkout_session_id)
+        
+        print("checking if payment account has referral id...")
+        if payment_account and payment_account.referral_id:
+            print(f"payment account has referral id: {payment_account.referral_id}")
+            referral = referral_service.get_referral(payment_account.referral_id)
+
+            print(f"got referral: {referral}")
+
+            referral_service.update_for_host(referral,
+                                             amount)
+
+        # remove_payment_account(radom_subscription_id=radom_subscription_id)
 
     return
 
@@ -226,9 +279,6 @@ async def paypal_webhook(request: Request) -> None:
     # Parse the JSON string into a dictionary
     body_dict = dict(json.loads(body_str))
 
-    # Print the parsed JSON for debugging
-    print(body_dict)
-
     event_type = body_dict.get('event_type')
     
     if event_type is None:
@@ -236,8 +286,6 @@ async def paypal_webhook(request: Request) -> None:
 
     # Handle subscription events
     elif event_type == "BILLING.SUBSCRIPTION.ACTIVATED":
-        print("Subscription was activated:", body)
-
         paypal_subscription_id = body_dict.get("resource", {}) \
                                           .get("id", {})
         
@@ -265,34 +313,15 @@ async def paypal_webhook(request: Request) -> None:
                                referral_id=None)
 
     # Handle subscription events
-    # elif event_type == "PAYMENT.SALE.COMPLETED":
-    #     print("PAYMENT.SALE.DENIED:", body)
-
-    #     custom_id = body_dict.get("resource", {}) \
-    #                           .get("custom", {})
-        
-    #     user = get_paypal_user_from_uuid(custom_id)
-
-    #     paypal_checkout_session_metadata = get_paypal_checkout_session_metadata(paypal_subscription_id)
-
-    #     if paypal_checkout_session_metadata and paypal_checkout_session_metadata.referral_id:
-    #         referral = referral_service.get_referral(paypal_checkout_session_metadata.referral_id)
-
-    #         referral_service.update_for_host(referral,
-    #                                          amount)
-
-    # Handle subscription events
     elif event_type == "PAYMENT.SALE.REFUNDED" or event_type == "PAYMENT.SALE.REVERSED" or \
          event_type == "PAYMENT.SALE.DENIED" or event_type == "BILLING.SUBSCRIPTION.CANCELLED":
-        
-        print("PAYMENT.SALE.REFUNDED:", body)
 
         custom_id = body_dict.get("resource", {}) \
                               .get("custom", {})
         
         user_id = get_paypal_user_id_from_uuid(custom_id)
 
-        remove_payment_account(user_id)
+        remove_payment_account(user_id=user_id)
     else:
         print("Unhandled event type:", event_type)
     
@@ -308,9 +337,6 @@ def get_paypal_user_id_from_uuid(uuid: str) -> Optional[Account]:
 def get_paypal_access_token():
     client_id = os.getenv("PAYPAL_CLIENT_ID")
     client_secret = os.getenv("PAYPAL_CLIENT_SECRET")
-
-    print(client_id)
-    print(client_secret)
 
     # Encode CLIENT_ID:CLIENT_SECRET in Base64
     credentials = f"{client_id}:{client_secret}"
@@ -350,17 +376,16 @@ def fetch_subscription_details(subscription_id: str, access_token: str):
 
 def cancel_plan(user: Account) -> bool:
     access_token = get_paypal_access_token()
-    print("ACCESS TOKEN", access_token)
 
     payment_account = get_payment_account(user.user_id)
 
     payment_account = get_payment_account(user.user_id)
-    if payment_account and hasattr(payment_account, 'paypal_subscription_id'):
+    if payment_account and hasattr(payment_account, 'paypal_subscription_id') \
+       and payment_account.paypal_subscription_id is not None \
+       and len(payment_account.paypal_subscription_id) > 0:
         subscription_id = payment_account.paypal_subscription_id
-        print("Subscription ID:", subscription_id)
 
         access_token = get_paypal_access_token()
-        print("ACCESS TOKEN", access_token)
 
         if access_token is None:
             print("Failed to obtain access token.")
@@ -386,7 +411,6 @@ def cancel_plan(user: Account) -> bool:
 
         response = requests.post(url, headers=headers, json=data)
 
-        print(response)
         if response.status_code == 204:
             print(f'Subscription {subscription_id} cancelled successfully.')
             return True
@@ -394,7 +418,9 @@ def cancel_plan(user: Account) -> bool:
             print(f'Failed to cancel subscription {subscription_id}. Response: {response.text}')
             return False
         
-    elif payment_account and payment_account.radom_subscription_id:
+    elif payment_account and hasattr(payment_account, 'radom_subscription_id') \
+         and payment_account.radom_subscription_id is not None \
+         and len(payment_account.radom_subscription_id) > 0:
         url = f"https://api.radom.com/subscription/{payment_account.radom_subscription_id}/cancel"
 
         headers = {
@@ -429,7 +455,7 @@ def get_available_plans(user: Account) -> Optional[Dict[str, Any]]:
 def radom_create_checkout_session_metadata(user_id: str, 
                                            radom_checkout_session_id: Optional[str] = None,
                                            referral_id: Optional[str] = None) -> None:
-    
+    print("creating radom checkout session metadata")
     return data.radom_create_checkout_session_metadata(user_id=user_id, 
                                                        radom_checkout_session_id=radom_checkout_session_id,
                                                        referral_id=referral_id)
@@ -473,18 +499,17 @@ def remove_payment_account(user_id: Optional[str] = None,
 
 def get_payment_account(user_id: str, 
                         paypal_subscription_id: str = None,
-                        radom_checkout_session_id: str = None) -> Optional[PaymentAccount]:
+                        radom_checkout_session_id: str = None,
+                        radom_subscription_id: str = None) -> Optional[PaymentAccount]:
     
     return data.get_payment_account(user_id,
                                     paypal_subscription_id,
-                                    radom_checkout_session_id)
+                                    radom_checkout_session_id,
+                                    radom_subscription_id)
 
 
 def get_current_plan(user: Account) -> Optional[Plan]:
-    print("GETTING CURRENT PLAN")
     payment_account = get_payment_account(user.user_id)
-
-    print("PAYMENT ACCOUNT", payment_account)
 
     if payment_account:
         return get_product(paypal_plan_id=payment_account.paypal_plan_id,

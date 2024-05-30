@@ -51,7 +51,7 @@ def update_statistics(user_id: str, amount: float, clicked: bool, signup_ref: bo
     return data.update_statistics(user_id, amount, clicked, signup_ref)
 
 def log_signup_ref(referral_id: str,
-                 user: Account) -> None:
+                   user: Account) -> None:
     print("LOGGING REFERRAL")
     try:
         data.add_link_user(referral_id, user.user_id)
@@ -65,7 +65,12 @@ def log_signup_ref(referral_id: str,
     
 def update_for_host(referral: Referral, 
                     amount: float) -> None:
+    print(f"checking if referral is not None...")
     if referral:
+        print(f"referral is not None: {referral}")
+
+        print(f"updating stats for host: {referral.host_id}")
+
         update_statistics(referral.host_id, 
                           amount,
                           clicked=False, 
