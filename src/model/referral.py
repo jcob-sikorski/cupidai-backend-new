@@ -22,6 +22,7 @@ class PayoutHistory(BaseModel):
 class Earnings(BaseModel):
     user_id: str | None = None
     amount: float | None = None
+    total_purchases: int | None = None
 
 class Statistics(BaseModel):
     period: str | None = None  # This can be 'weekly', 'monthly', or 'yearly'

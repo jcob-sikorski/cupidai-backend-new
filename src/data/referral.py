@@ -156,7 +156,8 @@ def update_statistics(user_id: str,
 
         updates_earnings = {
             '$inc': {
-                'amount': amount
+                'amount': amount,
+                'total_purchases': mask
             }
         }
 

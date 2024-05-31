@@ -16,7 +16,7 @@ import data.billing as data
 
 from model.account import Account
 
-from model.billing import (Plan, RadomCheckoutSessionRequest, 
+from model.billing import (Plan, RadomCheckoutRequest, 
                            RadomCheckoutSessionMetadata, PaymentAccount,
                            PaypalCheckoutMetadata)
 
@@ -40,7 +40,7 @@ def has_permissions(feature: str,
 
 
 def create_radom_checkout_session(
-    req: RadomCheckoutSessionRequest,
+    req: RadomCheckoutRequest,
     user: Account
 ) -> Dict[str, Any]:
     payment_account = get_payment_account(user_id=user.user_id)

@@ -34,12 +34,11 @@ class Plan(BaseModel):
     # stripe_price_id: str | None = None
     radom_product_id: str | None = None
     paypal_plan_id: str | None = None
-    paypal_checkout_link: str | None = None
 
 class ProductRequest(BaseModel):
     plan_id: str
 
-class RadomCheckoutSessionRequest(BaseModel):
+class RadomCheckoutRequest(BaseModel):
     plan_id: str
     referral_id: Optional[str] = None
 

@@ -10,7 +10,7 @@ import os
 
 from model.account import Account
 from model.billing import (Plan, 
-                           RadomCheckoutSessionRequest, 
+                           RadomCheckoutRequest, 
                            PaypalCheckoutSessionRequest)
 
 from service import account as account_service
@@ -33,7 +33,7 @@ async def has_permissions(req: FeatureRequest,
 
 
 @router.post('/create-radom-checkout-session', status_code=200)
-async def create_radom_checkout_session(req: RadomCheckoutSessionRequest,
+async def create_radom_checkout_session(req: RadomCheckoutRequest,
                                         user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> None:
     return service.create_radom_checkout_session(req,
                                                  user)
