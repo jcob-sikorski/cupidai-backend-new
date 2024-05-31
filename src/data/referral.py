@@ -76,6 +76,30 @@ def get_unpaid_earnings(user_id: str) -> float:
 
     return 0.00
 
+def get_tier_percentage(user_id: str) -> int:
+    earnings = earnings_col.find_one({"user_id": user_id})
+    
+    if not earnings:
+        return 20  # Default tier percentage for users with no earnings record
+
+    total_purchases = earnings.get('total_purchases', 0)
+
+    # Define referral levels
+    levels = [
+        (400, 40),
+        (200, 35),
+        (100, 30),
+        (50, 25),
+        (0, 20)  # Default level 1 with 20% recurring
+    ]
+
+    # Determine the user's tier percentage based on total_purchases
+    for threshold, percentage in levels:
+        if total_purchases >= threshold:
+            return percentage
+
+    return 20  # Default percentage if no level matched
+
 def get_referral(referral_id: str) -> Optional[Referral]:
     print("gettting referral...")
 
@@ -107,8 +131,6 @@ def update_statistics(user_id: str,
 
     print(f"PERIODS: {periods}")
 
-    total_amount_increment = 0
-
     if clicked:
         for period, start_date in periods.items():
             updates = {
@@ -124,8 +146,10 @@ def update_statistics(user_id: str,
             print(f"Update click stats for {user_id} in {period}: {result}")
 
     else:
+        percentage = Earnings(user_id)
+
         mask = -1 if subscription_cancelled else 1
-        amount = mask * amount_bought * 0.4
+        amount = mask * amount_bought * percentage
         for period, start_date in periods.items():
             if signup_ref:
                 updates = {
@@ -167,7 +191,6 @@ def update_statistics(user_id: str,
             upsert=True
         )
         print(f"Update earnings for {user_id}: {result_earnings}")
-
 
 
 def get_statistics(user_id: str) -> List[Statistics]:

@@ -320,7 +320,20 @@ async def paypal_webhook(request: Request) -> None:
                                                  amount=amount,
                                                  radom_product_id=None,
                                                  referral_id=internal_metadata.referral_id)
+            
+    elif event_type == "PAYMENT.SALE.COMPLETED":
+        print(f"EVENT: PAYMENT SALE COMPLETED")
+
+        print("GETTING CUSTOM ID...")
+        custom_id = body_dict.get("resource", {}) \
+                              .get("custom", {})
+        print(f"GOT CUSTOM ID: {custom_id}")
         
+        internal_metadata = get_paypal_checkout_metadata(custom_id)
+
+        payment_account = get_payment_account(user_id=internal_metadata.user_id)
+
+        print("CHECKING IF ACCOUNT IS FROM REFERRAL")
         if payment_account and internal_metadata.referral_id:
             referral = referral_service.get_referral(internal_metadata.referral_id)
 
@@ -329,6 +342,8 @@ async def paypal_webhook(request: Request) -> None:
             referral_service.update_for_host(referral,
                                              payment_account.amount,
                                              subscription_cancelled=False)
+        else:
+            print("ACCOUNT IS NOT FROM REFERRAL")
 
     # Handle subscription events
     elif event_type == "BILLING.SUBSCRIPTION.CANCELLED":

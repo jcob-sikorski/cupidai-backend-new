@@ -18,9 +18,6 @@ import service.billing as service
 
 router = APIRouter(prefix="/billing")
 
-# TODO: TBD: make data transfer betweeen calls much easier, 
-# there should be simple id to connect to everything - either user 
-# id or plan id or subscription id. TBD: make tiers
 
 class FeatureRequest(BaseModel):
     feature: str
