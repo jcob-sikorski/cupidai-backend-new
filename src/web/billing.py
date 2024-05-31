@@ -36,10 +36,10 @@ async def create_radom_checkout_session(req: CheckoutSessionRequest,
 
 @router.post('/webhook')
 async def webhook(request: Request) -> None:
-    print("\n\nhit radom webhook")
+    print("\n\nHIT RADOM WEBHOOK")
     radom_verification_key = request.headers.get("radom-verification-key")
 
-    print(f"got radom webhook verification key: {radom_verification_key}")
+    print(f"GOT RADOM WEBHOOK VERIFICATION KEY: {radom_verification_key}")
     
     if ((os.getenv("MODE") == 'production' and radom_verification_key != os.getenv("RADOM_WEBHOOK_SECRET")) or
         (os.getenv("MODE") == 'staging' and radom_verification_key != os.getenv("RADOM_WEBHOOK_SECRET")) or
@@ -69,18 +69,10 @@ async def cancel_plan(user: Annotated[Account, Depends(account_service.get_curre
 
 @router.get("/available-plans", status_code=200)  # Retrieves all available plans
 async def get_available_plans(user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[Dict[str, Any]]:
-    plans = service.get_available_plans(user)
-
-    print(plans)
-
-    return plans
+    return service.get_available_plans(user)
 
 
 @router.get("/product", status_code=200)  # Retrieves the specific product
 async def get_product(plan_id: str,
                       _: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[Plan]:
-    product = service.get_product(plan_id=plan_id)
-
-    print(product)
-
-    return product
+    return service.get_product(plan_id=plan_id)

@@ -20,11 +20,14 @@ def create_payment_account(user_id: str,
                            radom_checkout_session_id: Optional[str] = None,
                            amount: Optional[float] = None,
                            radom_product_id: Optional[str] = None,
-                           referral_id: Optional[str] = None) -> None:
+                           referral_id: Optional[str] = None) -> Optional[PaymentAccount]:
+    
+    print("CREATING PAYMENT ACCOUNT")
 
     payment_account = payment_account_col.find_one({"user_id": user_id})
 
     if not payment_account:
+        print("PAYMENT ACCOUNT NOT FOUND - CREATING NEW ONE...")
         # Create a new payment account
         payment_account = {
             "user_id": user_id,
@@ -36,8 +39,10 @@ def create_payment_account(user_id: str,
             "radom_product_id": radom_product_id,
             "referral_id": referral_id
         }
+        print(f"PAYMENT ACCOUNT MODEL FOR INSERT: {payment_account}")
         payment_account_col.insert_one(payment_account)
     else:
+        print("PAYMENT ACCOUNT FOUND - UPDATING OLD ONE...")
         # Update the existing payment account
         update_fields = {
             "paypal_plan_id": paypal_plan_id,
@@ -52,14 +57,28 @@ def create_payment_account(user_id: str,
             update_fields["referral_id"] = referral_id
 
         update_fields = {key: value for key, value in update_fields.items() if value is not None}
+
+        print(f"PAYMENT ACCOUNT MODEL FOR UPDATE: {update_fields}")
         
         payment_account_col.update_one(
             {"user_id": user_id},
             {"$set": update_fields}
         )
 
+    if payment_account is not None:
+        payment_account = PaymentAccount(**payment_account)
+
+        print(f"FOUND PAYMENT ACCOUNT: {payment_account}")
+        return payment_account
+    else:
+        print("PAYMENT ACCOUNT NOT FOUND")
+
+    return None
+
 def remove_payment_account(user_id: Optional[str] = None,
                            radom_subscription_id: Optional[str] = None) -> None:
+    print("REMOVING PAYMENT ACCOUNT...")
+    
     # Find the payment account
     payment_account = payment_account_col.find_one({
         "user_id": user_id
@@ -89,23 +108,25 @@ def get_payment_account(user_id: str,
                         radom_checkout_session_id: str = None,
                         radom_subscription_id: str = None) -> Optional[PaymentAccount]:
 
-    print("\n\ngetting payment account...")
-
-    print(f"get_payment_account args: user_id: {user_id}, paypal_subscription_id: {paypal_subscription_id}, radom_checkout_session_id: {radom_checkout_session_id}")
+    print("GETTING PAYMENT ACCOUNT...")
 
     if paypal_subscription_id is not None:
+        print("PAYPAL SUBSCRIPTION ID IS NOT NONE")
         result = payment_account_col.find_one({
             "paypal_subscription_id": paypal_subscription_id
         })
     elif radom_checkout_session_id is not None:
+        print("RADOM CHECKOUT SESSION ID IS NOT NONE")
         result = payment_account_col.find_one({
             "radom_checkout_session_id": radom_checkout_session_id
         })
     elif radom_subscription_id is not None:
+        print("RADOM SUBSCRIPTION ID IS NOT NONE")
         result = payment_account_col.find_one({
             "radom_subscription_id": radom_subscription_id
         })
     else:
+        print("USER ID IS NOT NONE")
         result = payment_account_col.find_one({
             "user_id": user_id
         })
@@ -113,8 +134,10 @@ def get_payment_account(user_id: str,
     if result is not None:
         payment_account = PaymentAccount(**result)
 
-        print(f"got payment_account: {payment_account}")
+        print(f"FOUND PAYMENT ACCOUNT: {payment_account}")
         return payment_account
+    else:
+        print("PAYMENT ACCOUNT NOT FOUND")
 
     return None
 
@@ -217,57 +240,53 @@ def radom_create_checkout_session_metadata(user_id: str,
                                            radom_checkout_session_id: Optional[str] = None,
                                            referral_id: Optional[str] = None) -> None:
     
-    print(f"metadata values: user_id: {user_id}, radom_checkout_session_id: {radom_checkout_session_id}, referral_id: {referral_id}")
+    print("CREATING RADOM CHECKOUT SESSION METADATA...")
+    
     checkout_session_metadata = checkout_session_metadata_col.find_one({"user_id": user_id})
 
     if not checkout_session_metadata:
-        print("user not found - creating new radom checkout session metadata")
+        print("RADOM CHECKOUT SESSION METADATA NOT FOUND")
+        print("CREATING NEW CHECKOUT SESSOIN METADATA: ")
         # Create a new payment account
         checkout_session_metadata = {
             "user_id": user_id,
             "radom_checkout_session_id": radom_checkout_session_id,
             "referral_id": referral_id
         }
+        print(checkout_session_metadata)
         checkout_session_metadata_col.insert_one(checkout_session_metadata)
     else:
-        print("user found - updating radom checkout session id")
+        print("RADOM CHECKOUT SESSION METADATA FOUND")
+
+        print("UPDATING CHECKOUT SESSOIN METADATA: ")
         # Update the existing payment account
         update_fields = {
-            "radom_checkout_session_id": radom_checkout_session_id
+            "radom_checkout_session_id": radom_checkout_session_id,
+            "referral_id": referral_id
         }
-        
-        print("checking if referral id is not None")
-        if referral_id is not None:
-            print(f"referral_id is not None: {referral_id}")
-            print("adding refferal_id to the radom checkout session metadata")
-            update_fields["referral_id"] = referral_id
-        else:
-            print(f"referral_id is None: {referral_id}")
 
         update_fields = {key: value for key, value in update_fields.items() if value is not None}
 
-        print(f"update fields for checkout session metadata: {update_fields}")
+        print(f"UPDATING FIELDS FOR CHECKOUT SESSION METADATA: {update_fields}")
         
-        payment_account_col.update_one(
+        checkout_session_metadata_col.update_one(
             {"user_id": user_id},
             {"$set": update_fields}
         )
-        print("radom checkout session metadata has been updared updated")
 
 
 def get_radom_checkout_session_metadata(radom_checkout_session_id: Optional[str] = None) -> Optional[CheckoutSessionMetadata]:
-    print("\n\ngetting radom checkout session metadata...")
+    print("GETTING RADOM CHECKOUT SESSION METADATA...")
     query = {}
     if radom_checkout_session_id:
         query["radom_checkout_session_id"] = radom_checkout_session_id
 
-    print(f"radom_checkout_session_id: {radom_checkout_session_id}")
     print(f"checkout session metadata query: {query}")
 
-    print("finding result in db...")
+    print("FINDING CHECKOUT SESSION METADATA IN DB...")
     result = checkout_session_metadata_col.find_one(query)
 
-    print(f"got result: {result}")
+    print(f"GOT CHECKOUT SESSION METADATA: {result}")
     
     # If a result is found, convert it to a Plan instance
     if result:

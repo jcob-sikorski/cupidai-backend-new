@@ -86,8 +86,14 @@ def get_referral(referral_id: str) -> Optional[Referral]:
 
     return None
 
-def update_statistics(user_id: str, amount_bought: float, clicked: bool, signup_ref: bool):
-    print("UPDATIG STATISTICS")
+# TODO: we should not add earnings and stats for ppl who have created a link and cancelled or bought a plan again,
+#       cause this will update their earnings stats which should not ,cause we only count for ppl who are outsiders
+def update_statistics(user_id: str, 
+                      amount_bought: float, 
+                      clicked: bool, 
+                      signup_ref: bool,
+                      subscription_cancelled: bool):
+    print("UPDATING STATISTICS")
     now = datetime.now()
     week_start = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)  # Monday at midnight
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)  # First day of the month at midnight
@@ -101,6 +107,8 @@ def update_statistics(user_id: str, amount_bought: float, clicked: bool, signup_
 
     print(f"PERIODS: {periods}")
 
+    total_amount_increment = 0
+
     if clicked:
         for period, start_date in periods.items():
             updates = {
@@ -108,39 +116,58 @@ def update_statistics(user_id: str, amount_bought: float, clicked: bool, signup_
                     'referral_link_clicks': 1
                 }
             }
-            statistics_col.find_one_and_update(
+            result = statistics_col.find_one_and_update(
                 {"user_id": user_id, "period": period, "period_date": start_date},
                 updates,
                 upsert=True
             )
-            
+            print(f"Update click stats for {user_id} in {period}: {result}")
+
     else:
+        mask = -1 if subscription_cancelled else 1
+        amount = mask * amount_bought * 0.4
         for period, start_date in periods.items():
-            updates = {
-                '$inc': {
-                    'purchases_made': 1, 'earned': amount_bought * 0.4
-                } if not signup_ref else {
-                    'referral_link_signups': 1
+            if signup_ref:
+                updates = {
+                    '$inc': {
+                        'referral_link_signups': 1
+                    }
                 }
-            }
-
-            statistics_col.find_one_and_update(
-                {"user_id": user_id, "period": period, "period_date": start_date},
-                updates,
-                upsert=True
-            )
-
-            updates = {
-                '$inc': {
-                    'amount': amount_bought * 0.4
+                result = statistics_col.find_one_and_update(
+                    {"user_id": user_id, "period": period, "period_date": start_date},
+                    updates,
+                    upsert=True
+                )
+                print(f"Update signup stats for {user_id} in {period}: {result}")
+            else:
+                updates_stats = {
+                    '$inc': {
+                        'purchases_made': mask,
+                        'earned': amount
+                    }
                 }
-            }
 
-            earnings_col.find_one_and_update(
-                {"user_id": user_id},
-                updates,
-                upsert=True
-            )
+                result_stats = statistics_col.find_one_and_update(
+                    {"user_id": user_id, "period": period, "period_date": start_date},
+                    updates_stats,
+                    upsert=True
+                )
+                print(f"Update purchase stats for {user_id} in {period}: {result_stats}")
+
+        updates_earnings = {
+            '$inc': {
+                'amount': amount
+            }
+        }
+
+        result_earnings = earnings_col.find_one_and_update(
+            {"user_id": user_id},
+            updates_earnings,
+            upsert=True
+        )
+        print(f"Update earnings for {user_id}: {result_earnings}")
+
+
 
 def get_statistics(user_id: str) -> List[Statistics]:
     # Group the sorted results by period and select the document with the maximum period_value within each group

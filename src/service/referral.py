@@ -19,7 +19,11 @@ def link_clicked(referral_id: str) -> None:
         referral = get_referral(referral_id)
 
         print(f"REFERRAL: {referral.dict()}")
-        update_statistics(referral.host_id, amount=0, clicked=True, signup_ref=False)
+        update_statistics(referral.host_id, 
+                          amount=0, 
+                          clicked=True, 
+                          signup_ref=False,
+                          subscription_cancelled=False)
     except ValueError:
         raise ValueError(f"Referral with ID {referral_id} does not exist.")
 
@@ -47,8 +51,16 @@ def get_unpaid_earnings(user: Account) -> float:
 def get_referral(referral_id: str) -> Optional[Referral]:
     return data.get_referral(referral_id)
 
-def update_statistics(user_id: str, amount: float, clicked: bool, signup_ref: bool):
-    return data.update_statistics(user_id, amount, clicked, signup_ref)
+def update_statistics(user_id: str, 
+                      amount: float, 
+                      clicked: bool, 
+                      signup_ref: bool,
+                      subscription_cancelled: bool):
+    return data.update_statistics(user_id, 
+                                  amount, 
+                                  clicked, 
+                                  signup_ref,
+                                  subscription_cancelled)
 
 def log_signup_ref(referral_id: str,
                    user: Account) -> None:
@@ -59,26 +71,36 @@ def log_signup_ref(referral_id: str,
         referral = get_referral(referral_id)
 
         print(f"REFERRAL: {referral.dict()}")
-        update_statistics(referral.host_id, amount=0, clicked=False, signup_ref=True)
+        update_statistics(referral.host_id, 
+                          amount=0, 
+                          clicked=False, 
+                          signup_ref=True,
+                          subscription_cancelled=False)
     except ValueError:
         raise ValueError(f"Referral with ID {referral_id} does not exist.")
     
 def update_for_host(referral: Referral, 
-                    amount: float) -> None:
-    print(f"checking if referral is not None...")
-    if referral:
-        print(f"referral is not None: {referral}")
+                    amount: float,
+                    subscription_cancelled: bool) -> None:
+    print("UPDATING STATS FOR HOST")
 
-        print(f"updating stats for host: {referral.host_id}")
+    print(f"CHECKING IF REFERRAL IS NOT NONE...")
+    if referral:
+        print(f"REFERRAL IS NOT NONE: {referral}")
+
+        print(f"UPDATING STATS FOR HOST ID: {referral.host_id}")
 
         update_statistics(referral.host_id, 
                           amount,
                           clicked=False, 
-                          signup_ref=False)
+                          signup_ref=False,
+                          subscription_cancelled=subscription_cancelled)
             
         user = account_service.get_by_id(referral.host_id)
         if user:
             email_service.send(user.email, 'clv2tl6jd00vybfeainihiu2j')
+    else:
+        print(f"REFERRAL IS NONE: {referral}")
 
 def get_statistics(user: Account) -> None:
     return data.get_statistics(user.user_id)
