@@ -97,8 +97,8 @@ def update_for_host(referral: Referral,
                           subscription_cancelled=subscription_cancelled)
             
         user = account_service.get_by_id(referral.host_id)
-        if user:
-            email_service.send(user.email, 'clv2tl6jd00vybfeainihiu2j')
+        # if user:
+        #     email_service.send(user.email, 'clv2tl6jd00vybfeainihiu2j')
     else:
         print(f"REFERRAL IS NONE: {referral}")
 

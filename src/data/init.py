@@ -32,7 +32,6 @@ def get_db():
     invite_col = db['Invite']
     password_reset_col = db['PasswordReset']
     payment_account_col = db['PaymentAccount']
-    paypal_uuid_col = db['PaypalUUID']
     checkout_session_metadata_col = db['RadomCheckoutSessionMetadata']
     paypal_checkout_metadata_col = db['PaypalCheckoutMetadata']
     tos_col = db['TermsOfService']
@@ -57,7 +56,6 @@ def get_db():
             invite_col, 
             password_reset_col, 
             payment_account_col, 
-            paypal_uuid_col,
             checkout_session_metadata_col, 
             paypal_checkout_metadata_col,
             tos_col, 
@@ -80,8 +78,7 @@ def get_db():
  insider_account_col,
  invite_col, 
  password_reset_col, 
- payment_account_col, 
- paypal_uuid_col,
+ payment_account_col,
  checkout_session_metadata_col, 
  paypal_checkout_metadata_col,
  tos_col, 

@@ -144,39 +144,38 @@ def update_statistics(user_id: str,
                 upsert=True
             )
             print(f"Update click stats for {user_id} in {period}: {result}")
-
-    else:
+    elif signup_ref:
+        for period, start_date in periods.items():
+            updates = {
+                '$inc': {
+                    'referral_link_signups': 1
+                }
+            }
+            result = statistics_col.find_one_and_update(
+                {"user_id": user_id, "period": period, "period_date": start_date},
+                updates,
+                upsert=True
+            )
+            print(f"Update signup stats for {user_id} in {period}: {result}")
+    elif (amount_bought is not None) and amount_bought != 0.00:
         percentage = Earnings(user_id)
 
         mask = -1 if subscription_cancelled else 1
         amount = mask * amount_bought * percentage
         for period, start_date in periods.items():
-            if signup_ref:
-                updates = {
-                    '$inc': {
-                        'referral_link_signups': 1
-                    }
+            updates_stats = {
+                '$inc': {
+                    'purchases_made': mask,
+                    'earned': amount
                 }
-                result = statistics_col.find_one_and_update(
-                    {"user_id": user_id, "period": period, "period_date": start_date},
-                    updates,
-                    upsert=True
-                )
-                print(f"Update signup stats for {user_id} in {period}: {result}")
-            else:
-                updates_stats = {
-                    '$inc': {
-                        'purchases_made': mask,
-                        'earned': amount
-                    }
-                }
+            }
 
-                result_stats = statistics_col.find_one_and_update(
-                    {"user_id": user_id, "period": period, "period_date": start_date},
-                    updates_stats,
-                    upsert=True
-                )
-                print(f"Update purchase stats for {user_id} in {period}: {result_stats}")
+            result_stats = statistics_col.find_one_and_update(
+                {"user_id": user_id, "period": period, "period_date": start_date},
+                updates_stats,
+                upsert=True
+            )
+            print(f"Update purchase stats for {user_id} in {period}: {result_stats}")
 
         updates_earnings = {
             '$inc': {
