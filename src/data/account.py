@@ -118,11 +118,7 @@ def get_password_reset(password_reset_id: str) -> None:
         return password_reset
     return None
 
-# TODO: check how service interacts with password field and rename user.password
-#       to user.password_hash
 
-# TODO: we should not always make upserts because it's unsafe like in this case
-#       updates only should suffice
 def set_new_password(password_hash: str, user_id: str) -> None:
     print("SETTING NEW PASSWORD")
     result = account_col.find_one_and_update(

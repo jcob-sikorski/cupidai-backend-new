@@ -40,7 +40,6 @@ def get_password_hash(password: str):
     return password_hash
 
 
-# TODO: check for None instead of False
 def authenticate_user(username: str, 
                       password: str) -> Optional[Account]:
     user = data.get_by_username(username)
@@ -198,10 +197,6 @@ def request_one_time_link(email: str) -> None:
 
     password_reset_id = str(uuid.uuid4())
 
-    # TODO: this should be a link to the UI with the password reset ID -
-    #       the UI should send this request when user types new password
-
-    # password_reset_link = f"{os.getenv('ROOT_DOMAIN')}/forgot-password/{password_reset_id}"
     password_reset_link = f"{os.getenv('LANDING_DOMAIN')}/forgot-password/{password_reset_id}"
 
     now = datetime.now()

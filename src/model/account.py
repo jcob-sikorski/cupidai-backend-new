@@ -24,12 +24,6 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-class TokenData(BaseModel):
-    # username: str | None = None
-    # TODO: wht do we want to transport back to the user?
-
-    pass
-
 class PasswordReset(BaseModel):
     reset_id: str | None = None
     user_id: str | None = None

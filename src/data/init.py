@@ -33,8 +33,8 @@ def get_db():
     password_reset_col = db['PasswordReset']
     payment_account_col = db['PaymentAccount']
     paypal_uuid_col = db['PaypalUUID']
-    checkout_session_metadata_col = db['CheckoutSessionMetadata']
-    paypal_checkout_session_metadata_col = db['PaypalCheckoutSessionMetadata']
+    checkout_session_metadata_col = db['RadomCheckoutSessionMetadata']
+    paypal_checkout_metadata_col = db['PaypalCheckoutMetadata']
     tos_col = db['TermsOfService']
     plan_col = db['Plan']
     usage_history_col = db['UsageHistory']
@@ -59,7 +59,7 @@ def get_db():
             payment_account_col, 
             paypal_uuid_col,
             checkout_session_metadata_col, 
-            paypal_checkout_session_metadata_col,
+            paypal_checkout_metadata_col,
             tos_col, 
             plan_col, 
             usage_history_col, 
@@ -83,7 +83,7 @@ def get_db():
  payment_account_col, 
  paypal_uuid_col,
  checkout_session_metadata_col, 
- paypal_checkout_session_metadata_col,
+ paypal_checkout_metadata_col,
  tos_col, 
  plan_col, 
  usage_history_col, 

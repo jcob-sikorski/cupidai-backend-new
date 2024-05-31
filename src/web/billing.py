@@ -9,13 +9,18 @@ from fastapi import HTTPException
 import os
 
 from model.account import Account
-from model.billing import Plan, CheckoutSessionRequest
+from model.billing import (Plan, 
+                           RadomCheckoutSessionRequest, 
+                           PaypalCheckoutSessionRequest)
 
 from service import account as account_service
 import service.billing as service
 
 router = APIRouter(prefix="/billing")
 
+# TODO: TBD: make data transfer betweeen calls much easier, 
+# there should be simple id to connect to everything - either user 
+# id or plan id or subscription id. TBD: make tiers
 
 class FeatureRequest(BaseModel):
     feature: str
@@ -28,7 +33,7 @@ async def has_permissions(req: FeatureRequest,
 
 
 @router.post('/create-radom-checkout-session', status_code=200)
-async def create_radom_checkout_session(req: CheckoutSessionRequest,
+async def create_radom_checkout_session(req: RadomCheckoutSessionRequest,
                                         user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> None:
     return service.create_radom_checkout_session(req,
                                                  user)
@@ -52,14 +57,18 @@ async def webhook(request: Request) -> None:
 
     return await service.radom_webhook(request)
 
+
 @router.post('/paypal-webhook')
 async def paypal_webhook(request: Request) -> None:
+    print("\n\nPAYPAL WEBHOOK HIT")
     return await service.paypal_webhook(request)
 
 
-@router.get("/paypal/obtain-uuid", status_code=200)  # Links user id with generated uuid which then is passed as custom_id in paypal button
-async def paypal_obtain_uuid(user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[str]:
-    return service.paypal_obtain_uuid(user)
+@router.post("/paypal/create-checkout-metadata", status_code=201)  # Links user id with generated uuid which then is passed as custom_id in paypal button
+async def paypal_create_checkout_metadata(req: PaypalCheckoutSessionRequest,
+                                          user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[str]:
+    return service.paypal_create_checkout_metadata(req.referral_id,
+                                                   user)
 
 
 @router.post("/cancel-plan", status_code=201)  # Attempts to cancel current plan of the user

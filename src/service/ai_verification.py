@@ -26,8 +26,6 @@ def check_prompt(prompt: Prompt):
             return "Error: style must be either none or raw"
         if prompt.version == '' or (prompt.version != '' and prompt.version not in versions[-3:]):
             return f"Error: incorrect version. Supported versions for raw style: {versions[-3:]}"
-        
-    # TODO: what about aspect ratios? which are valid?
 
     if prompt.stop != '' and (int(prompt.stop) < 10 or 100 < int(prompt.stop)):
         return "Error: stop must be between 10 and 100"

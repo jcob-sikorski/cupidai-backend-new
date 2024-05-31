@@ -5,13 +5,12 @@ from datetime import datetime
 from model.account import Account
 
 from model.billing import (PaymentAccount, TermsOfService, Plan,
-                           CheckoutSessionMetadata,
-                           PaypalCheckoutSessionMetadata)
+                           RadomCheckoutSessionMetadata,
+                           PaypalCheckoutMetadata)
 
 from .init import (payment_account_col, tos_col, plan_col, 
                    checkout_session_metadata_col,
-                   paypal_checkout_session_metadata_col,
-                   paypal_uuid_col)
+                   paypal_checkout_metadata_col)
 
 def create_payment_account(user_id: str, 
                            paypal_plan_id: Optional[str] = None,
@@ -142,11 +141,13 @@ def get_payment_account(user_id: str,
     return None
 
 
-def paypal_obtain_uuid(user_id: str,
-                       uuid: str) -> Optional[str]:
-    result = paypal_uuid_col.insert_one({
+def paypal_create_checkout_metadata(referral_id: Optional[str], 
+                                    uuid: str,
+                                    user_id: str) -> Optional[str]:
+    result = paypal_checkout_metadata_col.insert_one({
         "user_id": user_id,
-        "uuid": uuid
+        "uuid": uuid,
+        "referral_id": referral_id
     })
 
     if result is not None:
@@ -155,14 +156,19 @@ def paypal_obtain_uuid(user_id: str,
     return None
 
 
-def get_paypal_user_id_from_uuid(uuid: str) -> Optional[str]:
-    result = paypal_uuid_col.find_one({
+def get_paypal_checkout_metadata(uuid: str) -> Optional[PaypalCheckoutMetadata]:
+    print(f"GETTING PAYPAL CHECKOUT METADATA FROM UUID: {uuid}")
+    result = paypal_checkout_metadata_col.find_one({
         "uuid": uuid
     })
 
-    if result is not None:
-        return result.get('user_id')
+    # If a result is found, convert it to a Plan instance
+    if result:
+        print("PAYPAL CHECKOUT METADATA WAS FOUND: ", result)
+        return PaypalCheckoutMetadata(**result)
     
+    # If no result is found, return None
+    print("PAYPAL CHECKOUT METADATA WAS NOT FOUND: ", result)
     return None
 
 def accept_tos(user_id: str) -> None:
@@ -194,7 +200,7 @@ def paypal_create_checkout_session_metadata(user_id: str,
                                             paypal_subscription_id: Optional[str] = None,
                                             referral_id: Optional[str] = None) -> None:
     
-    paypal_checkout_session_metadata = paypal_checkout_session_metadata_col.find_one({
+    paypal_checkout_session_metadata = paypal_checkout_metadata_col.find_one({
         "paypal_subscription_id": paypal_subscription_id
     })
 
@@ -205,7 +211,7 @@ def paypal_create_checkout_session_metadata(user_id: str,
             "paypal_subscription_id": paypal_subscription_id,
             "referral_id": referral_id
         }
-        paypal_checkout_session_metadata_col.insert_one(paypal_checkout_session_metadata)
+        paypal_checkout_metadata_col.insert_one(paypal_checkout_session_metadata)
     else:
         # Update the existing payment account
         update_fields = {
@@ -223,14 +229,14 @@ def paypal_create_checkout_session_metadata(user_id: str,
         )
 
 
-def get_paypal_checkout_session_metadata(paypal_subscription_id: Optional[str] = None) -> Optional[CheckoutSessionMetadata]:
+def get_paypal_checkout_session_metadata(paypal_subscription_id: Optional[str] = None) -> Optional[RadomCheckoutSessionMetadata]:
     result = checkout_session_metadata_col.find_one({
         "paypal_subscription_id": paypal_subscription_id
     })
     
     # If a result is found, convert it to a Plan instance
     if result:
-        return PaypalCheckoutSessionMetadata(**result)
+        return PaypalCheckoutMetadata(**result)
     
     # If no result is found, return None
     return None
@@ -275,7 +281,7 @@ def radom_create_checkout_session_metadata(user_id: str,
         )
 
 
-def get_radom_checkout_session_metadata(radom_checkout_session_id: Optional[str] = None) -> Optional[CheckoutSessionMetadata]:
+def get_radom_checkout_session_metadata(radom_checkout_session_id: Optional[str] = None) -> Optional[RadomCheckoutSessionMetadata]:
     print("GETTING RADOM CHECKOUT SESSION METADATA...")
     query = {}
     if radom_checkout_session_id:
@@ -290,7 +296,7 @@ def get_radom_checkout_session_metadata(radom_checkout_session_id: Optional[str]
     
     # If a result is found, convert it to a Plan instance
     if result:
-        return CheckoutSessionMetadata(**result)
+        return RadomCheckoutSessionMetadata(**result)
     
     # If no result is found, return None
     return None

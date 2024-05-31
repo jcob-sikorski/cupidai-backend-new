@@ -22,9 +22,6 @@ async def generate_link(user: Annotated[Account, Depends(account_service.get_cur
 async def link_clicked(referral_id: str) -> None:
     service.link_clicked(referral_id)
 
-# TODO: we need to implement endpoint for substraction of earnings 
-#       in the earning_col by the specifed amount
-
 class PayoutRequest(BaseModel):
     paypal_email: str | None = None
     amount: float | None = None

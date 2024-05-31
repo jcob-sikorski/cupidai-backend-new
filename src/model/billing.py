@@ -39,20 +39,19 @@ class Plan(BaseModel):
 class ProductRequest(BaseModel):
     plan_id: str
 
-class CheckoutSessionRequest(BaseModel):
+class RadomCheckoutSessionRequest(BaseModel):
     plan_id: str
     referral_id: Optional[str] = None
 
-class CheckoutSessionMetadata(BaseModel):
+class RadomCheckoutSessionMetadata(BaseModel):
     radom_checkout_session_id: str
     user_id: str
     referral_id: Optional[str] = None
 
-# class StripeItem(BaseModel):
-#     data: Optional[dict] = None
-#     type: Optional[str] = None
+class PaypalCheckoutSessionRequest(BaseModel):
+    referral_id: Optional[str] = None
 
-class PaypalCheckoutSessionMetadata(BaseModel):
-    paypal_subscription_id: str
+class PaypalCheckoutMetadata(BaseModel):
+    uuid: str
     user_id: str
     referral_id: Optional[str] = None
