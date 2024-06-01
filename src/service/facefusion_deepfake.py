@@ -36,7 +36,7 @@ def run_video_faceswap(source_uris: str,
     
     if billing_service.has_permissions("Realistic AI Content Deepfake", user):
         print("RUNNING VIDEO FACESWAP")
-        photo_file_formats = ['jpeg', 'png', 'heic']
+        photo_file_formats = ['jpeg', 'png']
 
         source_uris = [source_uris]
         
@@ -44,7 +44,7 @@ def run_video_faceswap(source_uris: str,
         for source_uri in source_uris:
             deepfake_service.check_file_formats(source_uri, photo_file_formats)
 
-        video_file_formats = ['mov', 'mp4', 'quicktime']
+        video_file_formats = ['mp4']
 
         print('CHECKING VIDEO FILE FORMATS')
         deepfake_service.check_file_formats(target_uri, video_file_formats)
