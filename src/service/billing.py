@@ -240,14 +240,14 @@ async def radom_webhook(request: Request) -> None:
                            "clwxmnsll00vvrmqenbal0jln",
                            username=account.username)
         
-        # if payment_account and referral_id:
-        #     referral = referral_service.get_referral(referral_id)
+        if payment_account and referral_id:
+            referral = referral_service.get_referral(referral_id)
 
-        #     print(f"FOUND REFERRAL MODAL: {referral}")
+            print(f"FOUND REFERRAL MODAL: {referral}")
 
-        #     referral_service.update_for_host(referral,
-        #                                      payment_account.amount,
-        #                                      subscription_cancelled=False)
+            referral_service.update_for_host(referral,
+                                             payment_account.amount,
+                                             subscription_cancelled=False)
         
     elif event_type == "subscriptionExpired":
         radom_subscription_id = body_dict.get("eventData", {}).get("newSubscription", {}).get("subscriptionId")
@@ -276,19 +276,6 @@ async def radom_webhook(request: Request) -> None:
         email_service.send(account.email, 
                            "clwxm0der014zw2uff7l0pu9w",
                            username=account.username)
-
-        # print("CHECKING IF ACCOUNT IS FROM REFERRAL")
-        # if payment_account and payment_account.referral_id:
-        #     print("ACCOUNT IS FROM REFERRAL")
-        #     referral = referral_service.get_referral(payment_account.referral_id)
-
-        #     print(f"FOUND REFERRAL MODAL: {referral}")
-
-        #     referral_service.update_for_host(referral,
-        #                                      payment_account.amount,
-        #                                      subscription_cancelled=True)
-        # else:
-        #     print("ACCOUNT IS NOT FROM REFERRAL")
 
     return
 
@@ -395,19 +382,19 @@ async def paypal_webhook(request: Request) -> None:
                            "clwxmcrp7005y5htkedf5th36",
                            username=account.username)
 
-        # payment_account = get_payment_account(user_id=internal_metadata.user_id)
+        payment_account = get_payment_account(user_id=internal_metadata.user_id)
 
-        # print("CHECKING IF ACCOUNT IS FROM REFERRAL")
-        # if payment_account and internal_metadata.referral_id:
-        #     referral = referral_service.get_referral(internal_metadata.referral_id)
+        print("CHECKING IF ACCOUNT IS FROM REFERRAL")
+        if payment_account and internal_metadata.referral_id:
+            referral = referral_service.get_referral(internal_metadata.referral_id)
 
-        #     print(f"FOUND REFERRAL MODAL: {referral}")
+            print(f"FOUND REFERRAL MODAL: {referral}")
 
-        #     referral_service.update_for_host(referral,
-        #                                      payment_account.amount,
-        #                                      subscription_cancelled=False)
-        # else:
-        #     print("ACCOUNT IS NOT FROM REFERRAL")
+            referral_service.update_for_host(referral,
+                                             payment_account.amount,
+                                             subscription_cancelled=False)
+        else:
+            print("ACCOUNT IS NOT FROM REFERRAL")
 
     # TODO: we mark the payment account as disabled and 
     elif event_type == "BILLING.SUBSCRIPTION.PAYMENT.FAILED":
@@ -448,21 +435,6 @@ async def paypal_webhook(request: Request) -> None:
         email_service.send(account.email, 
                            "clwxm0der014zw2uff7l0pu9w",
                            username=account.username)
-
-        # payment_account = get_payment_account(user_id=internal_metadata.user_id)
-
-        # print("CHECKING IF ACCOUNT IS FROM REFERRAL")
-        # if payment_account and payment_account.referral_id:
-        #     print("ACCOUNT IS FROM REFERRAL")
-        #     referral = referral_service.get_referral(payment_account.referral_id)
-
-        #     print(f"FOUND REFERRAL MODAL: {referral}")
-
-        #     referral_service.update_for_host(referral,
-        #                                      payment_account.amount,
-        #                                      subscription_cancelled=True)
-        # else:
-        #     print("ACCOUNT IS NOT FROM REFERRAL")
     else:
         print("Unhandled event type:", event_type)
     
