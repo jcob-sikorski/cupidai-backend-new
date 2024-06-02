@@ -17,7 +17,6 @@ def add_account(social_account: SocialAccount,
     try:
         with session.start_transaction(write_concern=WriteConcern("majority")):
             social_account_dict = social_account.dict()
-
             prompt_dict = prompt.dict()
 
             account_id = str(uuid4())
@@ -36,7 +35,11 @@ def add_account(social_account: SocialAccount,
             print("SOCIAL ACCOUNT CREATED: ", social_account_dict)
             print("MIDJOURNEY PROMPT CREATED: ", prompt_dict)
 
-            return social_account, prompt
+            # Directly create instances from the dictionaries
+            created_social_account = SocialAccount(**social_account_dict)
+            created_prompt = Prompt(**prompt_dict)
+
+            return created_social_account, created_prompt
     except OperationFailure as exc:
         print("Transaction aborted:", exc)
         session.abort_transaction()
