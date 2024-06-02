@@ -13,6 +13,7 @@ from .init import (payment_account_col, tos_col, plan_col,
                    paypal_checkout_metadata_col)
 
 def create_payment_account(user_id: str, 
+                           provider: Optional[str] = None,
                            paypal_plan_id: Optional[str] = None,
                            paypal_subscription_id: Optional[str] = None,
                            radom_subscription_id: Optional[str] = None,
@@ -31,6 +32,7 @@ def create_payment_account(user_id: str,
         # Create a new payment account
         payment_account = {
             "user_id": user_id,
+            "provider": provider,
             "paypal_plan_id": paypal_plan_id,
             "paypal_subscription_id": paypal_subscription_id,
             "radom_subscription_id": radom_subscription_id,
@@ -46,6 +48,7 @@ def create_payment_account(user_id: str,
         print("PAYMENT ACCOUNT FOUND - UPDATING OLD ONE...")
         # Update the existing payment account
         update_fields = {
+            "provider": provider,
             "paypal_plan_id": paypal_plan_id,
             "paypal_subscription_id": paypal_subscription_id,
             "radom_subscription_id": radom_subscription_id,

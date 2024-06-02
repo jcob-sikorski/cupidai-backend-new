@@ -40,6 +40,7 @@ def has_permissions(feature: str,
             
     return False
 
+# TODO: test the expired subscription for radom and paypal
 
 def create_radom_checkout_session(
     req: RadomCheckoutRequest,
@@ -47,7 +48,7 @@ def create_radom_checkout_session(
 ) -> Dict[str, Any]:
     payment_account = get_payment_account(user_id=user.user_id)
 
-    if payment_account:
+    if payment_account and payment_account.status == "active":
         raise HTTPException(
             status_code=403,
             detail="You have to first cancel your plan to create a new one."
@@ -223,13 +224,15 @@ async def radom_webhook(request: Request) -> None:
         print(f"GOT REFERRAL ID FROM CHECKOUT SESSION METADATA: {referral_id}")
 
         create_payment_account(user_id=user_id, 
+                               provider="radom",
                                paypal_plan_id=None,
                                paypal_subscription_id=None,
                                radom_subscription_id=radom_subscription_id, 
                                radom_checkout_session_id=radom_checkout_session_id, 
                                amount=amount,
                                radom_product_id=radom_product_id,
-                               referral_id=referral_id)
+                               referral_id=referral_id,
+                               status="active")
         
         account = account_service.get_by_id(user_id=internal_metadata.user_id)
 
@@ -264,6 +267,9 @@ async def radom_webhook(request: Request) -> None:
         payment_account = get_payment_account(radom_subscription_id=radom_subscription_id)
 
         internal_metadata = get_radom_checkout_session_metadata(payment_account.radom_checkout_session_id)
+
+        set_payment_account_status(user_id=internal_metadata.user_id,
+                                   status="cancelled")
         
         account = account_service.get_by_id(user_id=internal_metadata.user_id)
 
@@ -339,6 +345,7 @@ async def paypal_webhook(request: Request) -> None:
         internal_metadata = get_paypal_checkout_metadata(custom_id)
 
         payment_account = create_payment_account(user_id=internal_metadata.user_id,
+                                                 provider="paypal",
                                                  paypal_plan_id=paypal_plan_id,
                                                  paypal_subscription_id=paypal_subscription_id,
                                                  radom_subscription_id=None, 
@@ -521,7 +528,7 @@ def cancel_plan(user: Account) -> bool:
     payment_account = get_payment_account(user_id=user.user_id)
     if payment_account and hasattr(payment_account, 'paypal_subscription_id') \
        and payment_account.paypal_subscription_id is not None \
-       and len(payment_account.paypal_subscription_id) > 0:
+       and payment_account.provider == "paypal":
         subscription_id = payment_account.paypal_subscription_id
 
         access_token = get_paypal_access_token()
@@ -559,7 +566,7 @@ def cancel_plan(user: Account) -> bool:
         
     elif payment_account and hasattr(payment_account, 'radom_subscription_id') \
          and payment_account.radom_subscription_id is not None \
-         and len(payment_account.radom_subscription_id) > 0:
+         and payment_account.provider == "radom":
         url = f"https://api.radom.com/subscription/{payment_account.radom_subscription_id}/cancel"
 
         headers = {
@@ -610,6 +617,7 @@ def get_product(paypal_plan_id: Optional[str] = None,
 
 
 def create_payment_account(user_id: Optional[str] = None,
+                           provider: Optional[str] = None,
                            paypal_plan_id: Optional[str] = None,
                            paypal_subscription_id: Optional[str] = None,
                            radom_subscription_id: Optional[str] = None,
@@ -620,6 +628,7 @@ def create_payment_account(user_id: Optional[str] = None,
                            referral_id: Optional[str] = None) -> Optional[PaymentAccount]:
     
     return data.create_payment_account(user_id, 
+                                       provider,
                                        paypal_plan_id,
                                        paypal_subscription_id,
                                        radom_subscription_id,
@@ -654,6 +663,6 @@ def get_payment_account(user_id: str = None,
 def get_current_plan(user: Account) -> Optional[Plan]:
     payment_account = get_payment_account(user.user_id)
 
-    if payment_account and payment_account.status != "disabled":
+    if payment_account and (payment_account.status == "active"):
         return get_product(paypal_plan_id=payment_account.paypal_plan_id,
                            radom_product_id=payment_account.radom_product_id)
