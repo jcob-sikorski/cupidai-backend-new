@@ -98,8 +98,8 @@ def create_radom_checkout_session(
                 ]
             }
         },
-        "successUrl": f"{os.getenv('WEBAPP_DOMAIN')}/dashboard",
-        "cancelUrl": f"{os.getenv('WEBAPP_DOMAIN')}/dashboard",
+        "successUrl": f"{os.getenv('WEBAPP_DOMAIN')}/transaction-processed",
+        "cancelUrl": f"{os.getenv('WEBAPP_DOMAIN')}/transaction-failed",
         "metadata": [
             {
                 "key": "user_id",
