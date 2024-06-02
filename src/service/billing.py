@@ -22,6 +22,8 @@ from model.billing import (Plan, RadomCheckoutRequest,
 
 import service.account as account_service
 
+import service.email as email_service
+
 import service.referral as referral_service
 
 
@@ -220,51 +222,72 @@ async def radom_webhook(request: Request) -> None:
 
         print(f"GOT REFERRAL ID FROM CHECKOUT SESSION METADATA: {referral_id}")
 
-        payment_account = create_payment_account(user_id=user_id, 
-                                                 paypal_plan_id=None,
-                                                 paypal_subscription_id=None,
-                                                 radom_subscription_id=radom_subscription_id, 
-                                                 radom_checkout_session_id=radom_checkout_session_id, 
-                                                 amount=amount,
-                                                 radom_product_id=radom_product_id,
-                                                 referral_id=referral_id)
+        create_payment_account(user_id=user_id, 
+                               paypal_plan_id=None,
+                               paypal_subscription_id=None,
+                               radom_subscription_id=radom_subscription_id, 
+                               radom_checkout_session_id=radom_checkout_session_id, 
+                               amount=amount,
+                               radom_product_id=radom_product_id,
+                               referral_id=referral_id)
         
-        if payment_account and referral_id:
-            referral = referral_service.get_referral(referral_id)
+        account = account_service.get_by_id(user_id=internal_metadata.user_id)
 
-            print(f"FOUND REFERRAL MODAL: {referral}")
+        email_service.send(account.email, 
+                           "clwxmnsll00vvrmqenbal0jln",
+                           username=account.username)
+        
+        # if payment_account and referral_id:
+        #     referral = referral_service.get_referral(referral_id)
 
-            referral_service.update_for_host(referral,
-                                             payment_account.amount,
-                                             subscription_cancelled=False)
+        #     print(f"FOUND REFERRAL MODAL: {referral}")
+
+        #     referral_service.update_for_host(referral,
+        #                                      payment_account.amount,
+        #                                      subscription_cancelled=False)
         
     elif event_type == "subscriptionExpired":
         radom_subscription_id = body_dict.get("eventData", {}).get("newSubscription", {}).get("subscriptionId")
 
-        remove_payment_account(radom_subscription_id=radom_subscription_id)
+        set_payment_account_status(radom_subscription_id=radom_subscription_id,
+                                   status="disabled")
+        
+        account = account_service.get_by_id(user_id=internal_metadata.user_id)
+
+        email_service.send(account.email, 
+                           "clwy121tq01hh7cvn4qwz3rjc",
+                           username=account.username)
+        
     elif event_type == "subscriptionCancelled":
         radom_subscription_id = body_dict.get("eventData", {}).get("subscriptionCancelled", {}).get("subscriptionId")
 
         payment_account = get_payment_account(radom_subscription_id=radom_subscription_id)
 
-        print("CHECKING IF ACCOUNT IS FROM REFERRAL")
-        if payment_account and payment_account.referral_id:
-            print("ACCOUNT IS FROM REFERRAL")
-            referral = referral_service.get_referral(payment_account.referral_id)
-
-            print(f"FOUND REFERRAL MODAL: {referral}")
-
-            referral_service.update_for_host(referral,
-                                             payment_account.amount,
-                                             subscription_cancelled=True)
-        else:
-            print("ACCOUNT IS NOT FROM REFERRAL")
+        internal_metadata = get_radom_checkout_session_metadata(payment_account.radom_checkout_session_id)
         
-        
-        remove_payment_account(radom_subscription_id=radom_subscription_id)
+        account = account_service.get_by_id(user_id=internal_metadata.user_id)
+
+        email_service.send(account.email, 
+                           "clwxm0der014zw2uff7l0pu9w",
+                           username=account.username)
+
+        # print("CHECKING IF ACCOUNT IS FROM REFERRAL")
+        # if payment_account and payment_account.referral_id:
+        #     print("ACCOUNT IS FROM REFERRAL")
+        #     referral = referral_service.get_referral(payment_account.referral_id)
+
+        #     print(f"FOUND REFERRAL MODAL: {referral}")
+
+        #     referral_service.update_for_host(referral,
+        #                                      payment_account.amount,
+        #                                      subscription_cancelled=True)
+        # else:
+        #     print("ACCOUNT IS NOT FROM REFERRAL")
 
     return
 
+# TODO: when it comes to the UI we should show the user status of the subscription
+#       like active, processed, etc.
 
 async def paypal_webhook(request: Request) -> None:
     # Read the request body
@@ -279,11 +302,14 @@ async def paypal_webhook(request: Request) -> None:
     print(f"PAYPAL REQUEST BODY: {body_dict}")
 
     event_type = body_dict.get('event_type')
+
+    print("EVENT TYPE: ", event_type)
     
     if event_type is None:
         raise HTTPException(status_code=400, detail="Event type not found in request")
 
-    # Handle subscription events
+    # TODO: only on successful dispute we makr the payment account as disabled
+
     elif event_type == "BILLING.SUBSCRIPTION.ACTIVATED":
         print("EVENT: BILLING.SUBSCRIPTION.ACTIVATED")
 
@@ -319,8 +345,33 @@ async def paypal_webhook(request: Request) -> None:
                                                  radom_checkout_session_id=None, 
                                                  amount=amount,
                                                  radom_product_id=None,
-                                                 referral_id=internal_metadata.referral_id)
-            
+                                                 referral_id=internal_metadata.referral_id,
+                                                 status="active")
+        
+        account = account_service.get_by_id(user_id=internal_metadata.user_id)
+
+        email_service.send(account.email, 
+                           "clwxmnsll00vvrmqenbal0jln",
+                           username=account.username)
+
+
+    elif event_type == "BILLING.SUBSCRIPTION.EXPIRED":
+        print("EVENT: BILLING.SUBSCRIPTION.EXPIRED")
+        
+        print("GETTING CUSTOM ID...")
+        subscription_id = body_dict.get("id", {})
+
+        print(f"GOT SUBSCRIPTION ID: {subscription_id}")
+    
+        set_payment_account_status(paypal_subscription_id=subscription_id,
+                                   status="disabled")
+        
+        account = account_service.get_by_id(user_id=internal_metadata.user_id)
+
+        email_service.send(account.email, 
+                           "clwy121tq01hh7cvn4qwz3rjc",
+                           username=account.username)
+    
     elif event_type == "PAYMENT.SALE.COMPLETED":
         print(f"EVENT: PAYMENT SALE COMPLETED")
 
@@ -331,19 +382,45 @@ async def paypal_webhook(request: Request) -> None:
         
         internal_metadata = get_paypal_checkout_metadata(custom_id)
 
-        payment_account = get_payment_account(user_id=internal_metadata.user_id)
+        account = account_service.get_by_id(user_id=internal_metadata.user_id)
 
-        print("CHECKING IF ACCOUNT IS FROM REFERRAL")
-        if payment_account and internal_metadata.referral_id:
-            referral = referral_service.get_referral(internal_metadata.referral_id)
+        email_service.send(account.email, 
+                           "clwxmcrp7005y5htkedf5th36",
+                           username=account.username)
 
-            print(f"FOUND REFERRAL MODAL: {referral}")
+        # payment_account = get_payment_account(user_id=internal_metadata.user_id)
 
-            referral_service.update_for_host(referral,
-                                             payment_account.amount,
-                                             subscription_cancelled=False)
-        else:
-            print("ACCOUNT IS NOT FROM REFERRAL")
+        # print("CHECKING IF ACCOUNT IS FROM REFERRAL")
+        # if payment_account and internal_metadata.referral_id:
+        #     referral = referral_service.get_referral(internal_metadata.referral_id)
+
+        #     print(f"FOUND REFERRAL MODAL: {referral}")
+
+        #     referral_service.update_for_host(referral,
+        #                                      payment_account.amount,
+        #                                      subscription_cancelled=False)
+        # else:
+        #     print("ACCOUNT IS NOT FROM REFERRAL")
+
+    # TODO: we mark the payment account as disabled and 
+    elif event_type == "BILLING.SUBSCRIPTION.PAYMENT.FAILED":
+        print(f"EVENT: BILLING SUBSCRIPTION PAYMENT FAILED")
+
+        print("GETTING CUSTOM ID...")
+        custom_id = body_dict.get("resource", {}) \
+                              .get("custom", {})
+        print(f"GOT CUSTOM ID: {custom_id}")
+        
+        internal_metadata = get_paypal_checkout_metadata(custom_id)
+
+        set_payment_account_status(user_id=internal_metadata.user_id,
+                                   status="disabled")
+
+        account = account_service.get_by_id(user_id=internal_metadata.user_id)
+
+        email_service.send(account.email, 
+                           "clwxmnsll00vvrmqenbal0jln",
+                           username=account.username)
 
     # Handle subscription events
     elif event_type == "BILLING.SUBSCRIPTION.CANCELLED":
@@ -356,22 +433,29 @@ async def paypal_webhook(request: Request) -> None:
         
         internal_metadata = get_paypal_checkout_metadata(custom_id)
 
-        payment_account = get_payment_account(user_id=internal_metadata.user_id)
+        set_payment_account_status(user_id=internal_metadata.user_id,
+                                   status="cancelled")
 
-        print("CHECKING IF ACCOUNT IS FROM REFERRAL")
-        if payment_account and payment_account.referral_id:
-            print("ACCOUNT IS FROM REFERRAL")
-            referral = referral_service.get_referral(payment_account.referral_id)
+        account = account_service.get_by_id(user_id=internal_metadata.user_id)
 
-            print(f"FOUND REFERRAL MODAL: {referral}")
+        email_service.send(account.email, 
+                           "clwxm0der014zw2uff7l0pu9w",
+                           username=account.username)
 
-            referral_service.update_for_host(referral,
-                                             payment_account.amount,
-                                             subscription_cancelled=True)
-        else:
-            print("ACCOUNT IS NOT FROM REFERRAL")
+        # payment_account = get_payment_account(user_id=internal_metadata.user_id)
 
-        remove_payment_account(user_id=internal_metadata.user_id)
+        # print("CHECKING IF ACCOUNT IS FROM REFERRAL")
+        # if payment_account and payment_account.referral_id:
+        #     print("ACCOUNT IS FROM REFERRAL")
+        #     referral = referral_service.get_referral(payment_account.referral_id)
+
+        #     print(f"FOUND REFERRAL MODAL: {referral}")
+
+        #     referral_service.update_for_host(referral,
+        #                                      payment_account.amount,
+        #                                      subscription_cancelled=True)
+        # else:
+        #     print("ACCOUNT IS NOT FROM REFERRAL")
     else:
         print("Unhandled event type:", event_type)
     
@@ -525,13 +609,14 @@ def get_product(paypal_plan_id: Optional[str] = None,
                             plan_id)
 
 
-def create_payment_account(user_id: str, 
-                           paypal_plan_id: str,
-                           paypal_subscription_id: str,
-                           radom_subscription_id: str,
-                           radom_checkout_session_id: str,
-                           amount: float,
-                           radom_product_id: str,
+def create_payment_account(user_id: Optional[str] = None,
+                           paypal_plan_id: Optional[str] = None,
+                           paypal_subscription_id: Optional[str] = None,
+                           radom_subscription_id: Optional[str] = None,
+                           radom_checkout_session_id: Optional[str] = None,
+                           amount: Optional[float] = None,
+                           radom_product_id: Optional[str] = None,
+                           status: Optional[str] = None,
                            referral_id: Optional[str] = None) -> Optional[PaymentAccount]:
     
     return data.create_payment_account(user_id, 
@@ -541,13 +626,18 @@ def create_payment_account(user_id: str,
                                        radom_checkout_session_id,
                                        amount,
                                        radom_product_id,
+                                       status,
                                        referral_id)
 
 
-def remove_payment_account(user_id: Optional[str] = None,
-                           radom_subscription_id: Optional[str] = None) -> None:
-    return data.remove_payment_account(user_id,
-                                       radom_subscription_id)
+def set_payment_account_status(user_id: Optional[str] = None,
+                               paypal_subscription_id: Optional[str] = None,
+                               radom_subscription_id: Optional[str] = None,
+                               status: Optional[str] = None) -> None:
+    return data.set_payment_account_status(user_id,
+                                           paypal_subscription_id,
+                                           radom_subscription_id,
+                                           status)
 
 
 def get_payment_account(user_id: str = None,
@@ -564,6 +654,6 @@ def get_payment_account(user_id: str = None,
 def get_current_plan(user: Account) -> Optional[Plan]:
     payment_account = get_payment_account(user.user_id)
 
-    if payment_account:
+    if payment_account and payment_account.status != "disabled":
         return get_product(paypal_plan_id=payment_account.paypal_plan_id,
                            radom_product_id=payment_account.radom_product_id)

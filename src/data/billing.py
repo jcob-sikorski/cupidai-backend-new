@@ -19,6 +19,7 @@ def create_payment_account(user_id: str,
                            radom_checkout_session_id: Optional[str] = None,
                            amount: Optional[float] = None,
                            radom_product_id: Optional[str] = None,
+                           status: Optional[str] = None,
                            referral_id: Optional[str] = None) -> Optional[PaymentAccount]:
     
     print("CREATING PAYMENT ACCOUNT")
@@ -36,6 +37,7 @@ def create_payment_account(user_id: str,
             "radom_checkout_session_id": radom_checkout_session_id,
             "amount": amount,
             "radom_product_id": radom_product_id,
+            "status": status,
             "referral_id": referral_id
         }
         print(f"PAYMENT ACCOUNT MODEL FOR INSERT: {payment_account}")
@@ -49,7 +51,8 @@ def create_payment_account(user_id: str,
             "radom_subscription_id": radom_subscription_id,
             "radom_checkout_session_id": radom_checkout_session_id,
             "amount": amount,
-            "radom_product_id": radom_product_id
+            "radom_product_id": radom_product_id,
+            "status": status,
         }
         
         if referral_id is not None:
@@ -74,32 +77,64 @@ def create_payment_account(user_id: str,
 
     return None
 
-def remove_payment_account(user_id: Optional[str] = None,
-                           radom_subscription_id: Optional[str] = None) -> None:
-    print("REMOVING PAYMENT ACCOUNT...")
+def set_payment_account_status(user_id: Optional[str] = None,
+                               paypal_subscription_id: Optional[str] = None,
+                               radom_subscription_id: Optional[str] = None,
+                               status: Optional[str] = None) -> None:
+    print("UPDATING PAYMENT ACCOUNT STATUS...")
     
-    # Find the payment account
-    payment_account = payment_account_col.find_one({
-        "user_id": user_id
-        })
-
-    if payment_account:
-        payment_account_col.delete_one({
+    # Find the payment account by user_id
+    if user_id:
+        print("USER ID IS NOT NULL: ", user_id)
+        print("LOOKING FOR PAYMENT ACCOUNT...")
+        payment_account = payment_account_col.find_one({
             "user_id": user_id
-            })
-        return
-
+        })
+        if payment_account:
+            print("FOUND PAYMENT ACCOUNT")
+            payment_account_col.update_one(
+                {"user_id": user_id},
+                {"$set": {"status": status}}
+            )
+            print("UPDATED PAYMENT ACCOUNT")
+            return
+        else:
+            print("PAYMENT ACCOUNT NOT FOUND")
         
-    # Find the payment account
-    payment_account = payment_account_col.find_one({
-        "radom_subscription_id": radom_subscription_id
-    })
-
-    if payment_account:
-        payment_account_col.delete_one({
+    if paypal_subscription_id:
+        print("PAYPAL SUBSCRIPTION ID IS NOT NULL: ", paypal_subscription_id)
+        print("LOOKING FOR PAYMENT ACCOUNT...")
+        payment_account = payment_account_col.find_one({
+            "paypal_subscription_id": paypal_subscription_id
+        })
+        if payment_account:
+            print("FOUND PAYMENT ACCOUNT")
+            payment_account_col.update_one(
+                {"paypal_subscription_id": paypal_subscription_id},
+                {"$set": {"status": status}}
+            )
+            print("UPDATED PAYMENT ACCOUNT")
+            return
+        else:
+            print("PAYMENT ACCOUNT NOT FOUND")
+    
+    # Find the payment account by radom_subscription_id
+    if radom_subscription_id:
+        print("RADOM SUBSCRIPTION ID IS NOT NULL: ", radom_subscription_id)
+        print("LOOKING FOR PAYMENT ACCOUNT...")
+        payment_account = payment_account_col.find_one({
             "radom_subscription_id": radom_subscription_id
         })
-        return
+        if payment_account:
+            print("FOUND PAYMENT ACCOUNT")
+            payment_account_col.update_one(
+                {"radom_subscription_id": radom_subscription_id},
+                {"$set": {"status": status}}
+            )
+            print("UPDATED PAYMENT ACCOUNT")
+            return
+        else:
+            print("PAYMENT ACCOUNT NOT FOUND")
 
 
 def get_payment_account(user_id: str, 
@@ -144,6 +179,7 @@ def get_payment_account(user_id: str,
 def paypal_create_checkout_metadata(referral_id: Optional[str], 
                                     uuid: str,
                                     user_id: str) -> Optional[str]:
+    print("CREATING PAYPAL CHECKOUT SESSION")
     result = paypal_checkout_metadata_col.insert_one({
         "user_id": user_id,
         "uuid": uuid,
@@ -200,11 +236,15 @@ def paypal_create_checkout_session_metadata(user_id: str,
                                             paypal_subscription_id: Optional[str] = None,
                                             referral_id: Optional[str] = None) -> None:
     
+    print("CREATING PAYPAL CHECKOUT METADATA...")
+
+    print("LOOKING FOR PAYPAL CHECKOUT SESSION METADATA...")
     paypal_checkout_session_metadata = paypal_checkout_metadata_col.find_one({
         "paypal_subscription_id": paypal_subscription_id
     })
 
     if not paypal_checkout_session_metadata:
+        print("PAYPAL CHECKOUT SESSION METADATA NOT FOUND - CREATING NEW ONE")
         # Create a new payment account
         paypal_checkout_session_metadata = {
             "user_id": user_id,
@@ -213,6 +253,7 @@ def paypal_create_checkout_session_metadata(user_id: str,
         }
         paypal_checkout_metadata_col.insert_one(paypal_checkout_session_metadata)
     else:
+        print("PAYPAL CHECKOUT SESSION METADATA FOUND - UPDATING IT")
         # Update the existing payment account
         update_fields = {
             "paypal_subscription_id": paypal_subscription_id
@@ -223,21 +264,24 @@ def paypal_create_checkout_session_metadata(user_id: str,
 
         update_fields = {key: value for key, value in update_fields.items() if value is not None}
         
-        payment_account_col.update_one(
+        paypal_checkout_metadata_col.update_one(
             {"user_id": user_id},
             {"$set": update_fields}
         )
 
 
 def get_paypal_checkout_session_metadata(paypal_subscription_id: Optional[str] = None) -> Optional[RadomCheckoutSessionMetadata]:
+    print("GETTING PAYPAL CHECKOUT SESSION METADATA...")
     result = checkout_session_metadata_col.find_one({
         "paypal_subscription_id": paypal_subscription_id
     })
     
     # If a result is found, convert it to a Plan instance
     if result:
+        print("PAYPAL CHECKOUT SESSION METADATA FOUND: ", result)
         return PaypalCheckoutMetadata(**result)
     
+    print("PAYPAL CHECKOUT SESSION METADATA NOT FOUND: ", result)
     # If no result is found, return None
     return None
 
@@ -291,13 +335,13 @@ def get_radom_checkout_session_metadata(radom_checkout_session_id: Optional[str]
 
     print("FINDING CHECKOUT SESSION METADATA IN DB...")
     result = checkout_session_metadata_col.find_one(query)
-
-    print(f"GOT CHECKOUT SESSION METADATA: {result}")
     
     # If a result is found, convert it to a Plan instance
     if result:
+        print(f"CHECKOUT SESSION METADATA FOUND: {result}")
         return RadomCheckoutSessionMetadata(**result)
     
+    print(f"CHECKOUT SESSION METADATA NOT FOUND: {result}")
     # If no result is found, return None
     return None
 
@@ -305,20 +349,28 @@ def get_product(paypal_plan_id: Optional[str] = None,
                 radom_product_id: Optional[str] = None,
                 plan_id: Optional[str] = None) -> Optional[Plan]:
     
+    print("GETTING PRODUCT...")
+    
     query = {}
     if paypal_plan_id:
+        print("PAYPAL PLAN ID IS NOT NULL: ", paypal_plan_id)
         query = {"paypal_plan_id": paypal_plan_id}
     elif radom_product_id:
+        print("RADOM PRODUCT ID IS NOT NULL: ", radom_product_id)
         query = {"radom_product_id": radom_product_id}
     else:
+        print("PLAN ID IS NOT NULL: ", plan_id)
         query = {"plan_id": plan_id}
 
+    print("LOOKING FOR RADOM PRODUCT/PAYPAL PLAN...")
     # Query the MongoDB collection based on the non-None field
     result = plan_col.find_one(query)
     
     # If a result is found, convert it to a Plan instance
     if result:
+        print("RADOM PRODUCT/PAYPAL PLAN FOUND: ", result)
         return Plan(**result)
     
+    print("RADOM PRODUCT/PAYPAL PLAN NOT FOUND: ", result)
     # If no result is found, return None
     return None

@@ -15,6 +15,7 @@ class PaymentAccount(BaseModel):
     radom_checkout_session_id: str | None = None
     amount: float | None = None
     referral_id: Optional[str] = None
+    status: str | None = None # disabled, active, payment processsed
 
 # class StripeAccount(BaseModel):
 #     user_id: str

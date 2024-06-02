@@ -92,7 +92,7 @@ def initiate_photo_faceswap(source_uri: str,
                             user: Account) -> Optional[Message]:
     
     if billing_service.has_permissions("Realistic AI Content Deepfake", user):
-        valid_formats = ['jpeg', 'png', 'heic']
+        valid_formats = ['jpeg', 'png']
 
         deepfake_service.check_file_formats(target_uri,
                                             valid_formats)
@@ -154,7 +154,7 @@ def run_photo_faceswap(source_uri: str, # photo of the old face from the photo
         return message
     except ValueError:
         raise HTTPException(status_code=400, 
-                            detail="Failed to generate akool deepfake.")
+                            detail="Failed to generate photo deepfake.")
     
 
 def send_post_request(url: str, 
