@@ -238,7 +238,8 @@ async def radom_webhook(request: Request) -> None:
 
         email_service.send(account.email, 
                            "clwxmnsll00vvrmqenbal0jln",
-                           username=account.username)
+                           username=account.username,
+                           discord_link=os.getenv("DISCORD_LINK"))
         
         if payment_account and referral_id:
             referral = referral_service.get_referral(referral_id)
@@ -259,7 +260,8 @@ async def radom_webhook(request: Request) -> None:
 
         email_service.send(account.email, 
                            "clwy121tq01hh7cvn4qwz3rjc",
-                           username=account.username)
+                           username=account.username,
+                           discord_link=os.getenv("DISCORD_LINK"))
         
     elif event_type == "subscriptionCancelled":
         radom_subscription_id = body_dict.get("eventData", {}).get("subscriptionCancelled", {}).get("subscriptionId")
@@ -275,7 +277,8 @@ async def radom_webhook(request: Request) -> None:
 
         email_service.send(account.email, 
                            "clwxm0der014zw2uff7l0pu9w",
-                           username=account.username)
+                           username=account.username,
+                           discord_link=os.getenv("DISCORD_LINK"))
 
     return
 
@@ -346,7 +349,8 @@ async def paypal_webhook(request: Request) -> None:
 
         email_service.send(account.email, 
                            "clwxmnsll00vvrmqenbal0jln",
-                           username=account.username)
+                           username=account.username,
+                           discord_link=os.getenv("DISCORD_LINK"))
 
 
     elif event_type == "BILLING.SUBSCRIPTION.EXPIRED":
@@ -364,7 +368,8 @@ async def paypal_webhook(request: Request) -> None:
 
         email_service.send(account.email, 
                            "clwy121tq01hh7cvn4qwz3rjc",
-                           username=account.username)
+                           username=account.username,
+                           discord_link=os.getenv("DISCORD_LINK"))
     
     elif event_type == "PAYMENT.SALE.COMPLETED":
         print(f"EVENT: PAYMENT SALE COMPLETED")
@@ -380,7 +385,8 @@ async def paypal_webhook(request: Request) -> None:
 
         email_service.send(account.email, 
                            "clwxmcrp7005y5htkedf5th36",
-                           username=account.username)
+                           username=account.username,
+                           discord_link=os.getenv("DISCORD_LINK"))
 
         payment_account = get_payment_account(user_id=internal_metadata.user_id)
 
@@ -414,7 +420,8 @@ async def paypal_webhook(request: Request) -> None:
 
         email_service.send(account.email, 
                            "clwxmnsll00vvrmqenbal0jln",
-                           username=account.username)
+                           username=account.username,
+                           discord_link=os.getenv("DISCORD_LINK"))
 
     # Handle subscription events
     elif event_type == "BILLING.SUBSCRIPTION.CANCELLED":
@@ -434,7 +441,8 @@ async def paypal_webhook(request: Request) -> None:
 
         email_service.send(account.email, 
                            "clwxm0der014zw2uff7l0pu9w",
-                           username=account.username)
+                           username=account.username,
+                           discord_link=os.getenv("DISCORD_LINK"))
     else:
         print("Unhandled event type:", event_type)
     

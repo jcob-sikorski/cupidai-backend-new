@@ -146,7 +146,8 @@ async def signup(email: str,
 
     email_service.send(email, 
                        "clv9so1fa029b8k9nig3go17m", 
-                       username=form_data.username)
+                       username=form_data.username,
+                       discord_link=os.getenv("DISCORD_LINK"))
 
     return await login(form_data)
 
@@ -213,7 +214,10 @@ def request_one_time_link(email: str) -> None:
     data.create_password_reset(password_reset)
 
     # for env
-    email_service.send(email, 'clv2h2bt800bm1147nw7gtngv', password_reset_link=password_reset_link)
+    email_service.send(email, 
+                       'clv2h2bt800bm1147nw7gtngv', 
+                       password_reset_link=password_reset_link,
+                       discord_link=os.getenv("DISCORD_LINK"))
 
 def change_email(email: str, 
                  user: Account) -> None:
