@@ -186,11 +186,11 @@ async def imagine(prompt: Prompt,
                 usage_history_service.update("ai_verification", user.user_id)
 
             if resp.status_code != 200 or response_data.error:
-                raise HTTPException(status_code=500, detail="Prompt execution failed.")
+                error_detail = response_data.error if response_data.error else resp.text
+                raise HTTPException(status_code=500, detail=f"Prompt execution failed: {error_detail}")
             
             print(response_data)
             
-            # # Serialize response data using jsonable_encoder
             return response_data
     else:
         raise HTTPException(status_code=403, detail="Upgrade your plan to unlock permissions.")
@@ -226,9 +226,10 @@ async def action(messageId: str,
 
     if response_data.success:
         usage_history_service.update('ai_verification', user.user_id)
-
+    
     if resp.status_code != 200 or response_data.error:
-        raise HTTPException(status_code=400, detail="Action failed")
+        error_detail = response_data.error if response_data.error else resp.text
+        raise HTTPException(status_code=500, detail=f"Action failed: {error_detail}")
 
     print("AI VERIF DATA SENT")
     print(response_data)
