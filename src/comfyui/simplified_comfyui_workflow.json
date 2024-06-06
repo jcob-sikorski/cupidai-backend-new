@@ -338,7 +338,7 @@
         "Node name for S&R": "LoadImage"
       },
       "widgets_values": [
-        null,
+        "20bcfe8f86b96bcfc876b73062fe7081 (1).jpg",
         "image"
       ]
     },
@@ -408,7 +408,7 @@
         "Node name for S&R": "LoadImage"
       },
       "widgets_values": [
-        null,
+        "00089-sRAW.png",
         "image"
       ],
       "shape": 1
@@ -481,7 +481,7 @@
         "Node name for S&R": "LoadImage"
       },
       "widgets_values": [
-        null,
+        "00089-sRAW.png",
         "image"
       ]
     },
@@ -520,7 +520,7 @@
         "Node name for S&R": "LoadImage"
       },
       "widgets_values": [
-        null,
+        "00089-sRAW.png",
         "image"
       ]
     },
@@ -704,7 +704,7 @@
         "Node name for S&R": "LoadImage"
       },
       "widgets_values": [
-        null,
+        "images (2).jpg",
         "image"
       ]
     },
@@ -764,7 +764,7 @@
         "Node name for S&R": "LoadImage"
       },
       "widgets_values": [
-        null,
+        "deepfake-output-RjYmo-S9cKXXIQyQNIHDb.png",
         "image"
       ]
     },
@@ -1083,7 +1083,7 @@
         "Node name for S&R": "LoadImage"
       },
       "widgets_values": [
-        null,
+        "20bcfe8f86b96bcfc876b73062fe7081.jpg",
         "image"
       ]
     },
@@ -1159,7 +1159,9 @@
         {
           "name": "CNET_STACK",
           "type": "CONTROL_NET_STACK",
-          "links": [],
+          "links": [
+            190
+          ],
           "shape": 3,
           "slot_index": 0
         }
@@ -2233,6 +2235,40 @@
       "properties": {
         "Node name for S&R": "PreviewImage"
       }
+    },
+    {
+      "id": 311,
+      "type": "Reroute",
+      "pos": [
+        -1152,
+        371
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 35,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 190
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "CONTROL_NET_STACK",
+          "links": [],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      }
     }
   ],
   "links": [
@@ -2539,6 +2575,14 @@
       252,
       2,
       "CONDITIONING"
+    ],
+    [
+      190,
+      217,
+      0,
+      311,
+      0,
+      "*"
     ],
     [
       197,

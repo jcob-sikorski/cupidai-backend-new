@@ -104,11 +104,10 @@ async def generate(settings: Settings,
         reference_image_path = get_image_path(settings.reference_image_url)
         controlnet_reference_image_path = get_image_path(settings.controlnet_reference_image_url)
 
-        message_id = str(uuid4())
-        # message_id = update_message(user_id=user.user_id, 
-        #                             status="started", 
-        #                             message_id=None, 
-        #                             s3_uris=None)
+        message_id = update_message(user_id=user.user_id, 
+                                    status="started", 
+                                    message_id=None, 
+                                    s3_uris=None)
         
         if settings.model:
             settings.model = map_model(settings.model)
@@ -129,11 +128,11 @@ async def generate(settings: Settings,
         with open(file_path, 'w') as file:
             json.dump(workflow, file, indent=2)  # indent=4 for pretty printing
 
-        # if workflow is None:
-        #     update_message(user.user_id, 
-        #                    message_id, 
-        #                    "failed")
-        #     raise HTTPException(status_code=500, detail="Error while processing the workflow.")
+        if workflow is None:
+            update_message(user.user_id, 
+                           message_id, 
+                           "failed")
+            raise HTTPException(status_code=500, detail="Error while processing the workflow.")
         
         url = f"{os.getenv('RUNPOD_DOMAIN')}/image-generation/"
 
@@ -143,19 +142,17 @@ async def generate(settings: Settings,
         }
 
         # Define the payload for the request
-        # payload = {
-        #     'workflow': workflow,
-        #     'reference_image_url': settings.reference_image_url,
-        #     'reference_image_path': reference_image_path,
-        #     'controlnet_reference_image_url': settings.controlnet_reference_image_url,
-        #     'controlnet_reference_image_path': controlnet_reference_image_path,
-        #     'message_id': message_id,
-        #     'user_id': user.user_id,
-        # }
+        payload = {
+            'workflow': workflow,
+            'reference_image_url': settings.reference_image_url,
+            'reference_image_path': reference_image_path,
+            'controlnet_reference_image_url': settings.controlnet_reference_image_url,
+            'controlnet_reference_image_path': controlnet_reference_image_path,
+            'message_id': message_id,
+            'user_id': user.user_id,
+        }
 
-        # print("PAYLOAD: ", payload)
-
-        # background_tasks.add_task(send_post_request, url, headers, payload)
+        background_tasks.add_task(send_post_request, url, headers, payload)
     else:
         raise HTTPException(status_code=403, detail="Upgrade your plan to unlock permissions.")
     
