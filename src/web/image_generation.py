@@ -21,8 +21,6 @@ async def webhook(message: Message) -> None:
 async def generate(settings: Settings,
                    user: Annotated[Account, Depends(account_service.get_current_active_user)], 
                    background_tasks: BackgroundTasks) -> None:
-    
-    print("SETTINGS PASSED FROM FRONTEND", settings)
 
     return await service.generate(settings, 
                                   user, 

@@ -1,377 +1,216 @@
-from typing import List, Optional
-
-import importlib
-
+from typing import Optional
+import json
 import os
-
 from model.image_generation import Settings
 
-class ModelInterface():
-    def __init__(self):
-        self.lora_stacker = self.load_json("lora_stacker")
-        self.image_size = self.load_json("image_size")
-        self.get_image_size = self.load_json("get_image_size")
-        self.random_prompts = self.load_json("random_prompts")
-        self.ipa1 = self.load_json("ipa1")
-        self.ipa2 = self.load_json("ipa2")
-        self.efficient_loader = self.load_json("efficient_loader")
-        self.ksampler_efficient1 = self.load_json("ksampler_efficient1")
-        self.ksampler_efficient2 = self.load_json("ksampler_efficient2")
-        self.preview_image1 = self.load_json("preview_image1")
-        self.preview_image2 = self.load_json("preview_image2")
 
-        self.used_components = set()
+def set_basic_settings(workflow, settings, reference_image_path):
+    print("Setting basic settings")
 
-    def load_json(self, 
-                  unit_name: str):
-        # Import the JSON dictionary directly without decoding
-        try:
-            # Assuming all JSON data is stored in the JSONEngine module
-            module = importlib.import_module("comfyui.JSONEngine")
-            json_dict = getattr(module, unit_name)
-            # Directly return the dictionary without json.loads
-            return json_dict
-        except (ImportError, AttributeError) as e:
-            print(f"Error processing unit {unit_name}: {str(e)}")
-            return None
-
-    def finalize(self):
-        # Initialize an empty dictionary to hold the combined data
-        combined_json = {}
-        # Iterate through each used component
-        for component in self.used_components:
-            # print(component)
-            component_data = getattr(self, component, None)
-            # print(component_data)
-            if isinstance(component_data, dict):
-                # Merge the component's values into the combined_json
-                for key, value in component_data.items():
-                    combined_json[key] = value
-
-        # Sort keys that are integer strings in ascending order
-        combined_json_sorted = {}
-        sorted_keys = sorted(combined_json.keys(), key=lambda x: int(x) if x.isdigit() else x)
-        for key in sorted_keys:
-            combined_json_sorted[key] = combined_json[key]
-
-        return combined_json_sorted
+    for node in workflow.get('nodes', []):
+        node_id = node.get('id')
+        if node_id == 206:
+            print("Setting values for node 206")
+            node['widgets_values'][0] = settings.model
+            node['widgets_values'][10] = int(settings.width)
+            node['widgets_values'][11] = int(settings.height)
+            node['widgets_values'][12] = int(settings.n_images)
+        elif node_id == 222:
+            node['widgets_values'][0] = settings.pos_prompt
+        elif node_id == 229:
+            print(f"Setting sampling steps for node {node_id}")
+            node['widgets_values'][2] = int(settings.sampling_steps)
+        elif node_id == 280:
+            print("Setting reference image path for node 280")
+            node['widgets_values'][0] = reference_image_path
 
 
-    def choose_output_size(self, 
-                           int1: int, 
-                           int2: int, 
-                           image_path: str = ""):
-        """
-        ################# CHOOSE OUTPUT SIZE #################
-        (Optional) Choose image for size reference
-        1. Set the output image size
-        2. Connect the int1 to empty_latent_width in efficient loader
-        3. Connect the int2 to empty_latent_height in efficient loader
+def set_controlnet_parameters(workflow, 
+                              settings, 
+                              controlnet_reference_image_path, 
+                              image_loader_id, 
+                              controlnet_stacker_id):
+    print("Setting controlnet parameters")
+    for node in workflow.get('nodes', []):
+        node_id = node.get('id')
+        if node_id == int(image_loader_id):
+            print(f"Setting controlnet reference image path for node {image_loader_id}")
+            node['widgets_values'][0] = controlnet_reference_image_path
+        elif node_id == int(controlnet_stacker_id):
+            print(f"Setting controlnet stacker values for node {controlnet_stacker_id}")
+            node['widgets_values'][0] = float(settings.strength)/100
+            node['widgets_values'][1] = float(settings.start_percent)/100
+            node['widgets_values'][2] = float(settings.end_percent)/100
+
+
+def set_controlnet(workflow, settings, controlnet_reference_image_path):
+
+# for ip2p: 217 <-> 219
+# for canny: 214 <-> 220
+# for midas: 211 <-> 221
+# for openpose: 208 <-> 222
+
+# set last link id as:
+# {
+#   "last_node_id": 320,
+#   "last_link_id": 219,
+
+# add to controlnet stacket outputs:
+    # {
+    #   "id": 217,
+    #   "type": "Control Net Stacker",
+    #   "pos": [
+    #     -1977.0729068818039,
+    #     1786.3307342155315
+    #   ],
+    #   "size": {
+    #     "0": 315,
+    #     "1": 146
+    #   },
+    #   "flags": {},
+    #   "order": 28,
+    #   "mode": 0,
+    #   "inputs": [
+    #     {
+    #       "name": "control_net",
+    #       "type": "CONTROL_NET",
+    #       "link": 28,
+    #       "slot_index": 0
+    #     },
+    #     {
+    #       "name": "image",
+    #       "type": "IMAGE",
+    #       "link": 26
+    #     },
+    #     {
+    #       "name": "cnet_stack",
+    #       "type": "CONTROL_NET_STACK",
+    #       "link": null,
+    #       "slot_index": 2
+    #     }
+    #   ],
+    #   "outputs": [
+    #     {
+    #       "name": "CNET_STACK",
+    #       "type": "CONTROL_NET_STACK",
+    #       "links": [
+    #         219
+    #       ],
+    #       "shape": 3,
+    #       "slot_index": 0
+    #     }
+    #   ],
+
+    # add to kefficient loader inputs:
+#    {
+#       "id": 206,
+#       "type": "Efficient Loader",
+#       "pos": [
+#         -410,
+#         175
+#       ],
+#       "size": {
+#         "0": 386.65386962890625,
+#         "1": 671.7037963867188
+#       },
+#       "flags": {},
+#       "order": 34,
+#       "mode": 0,
+#       "inputs": [
+#         {
+#           "name": "lora_stack",
+#           "type": "LORA_STACK",
+#           "link": 15,
+#           "slot_index": 0
+#         },
+#         {
+#           "name": "cnet_stack",
+#           "type": "CONTROL_NET_STACK",
+#           "link": 219,
+#           "slot_index": 1
+#         },
+
+# add to links:
+#     [
+#       219,
+#       217,
+#       0,
+#       206,
+#       1,
+#       "CONTROL_NET_STACK"
+#     ]
+#   ],
+
+    if settings.controlnet_enabled:
+        print("Controlnet is enabled")
+        link_map = {
+            "Pose": (208, 210, 222),
+            "Depth": (211, 213, 221),
+            "Edge Detection": (214, 216, 220),
+            "Resolution Enhancement": (217, 218, 219)
+        }
         
-        (Default) Choose height and width of the output image
-        1. Set the int1 to empty_latent_width in efficient loader
-        2. Connect the int2 to empty_latent_height in efficient loader
-        """
+        if settings.controlnet_model in link_map:
+            controlnet_stacker_id, image_loader_id, link_id = link_map[settings.controlnet_model]
 
-        # set the output image size
-        if image_path:
-            self.used_components.discard("image_size")
-            self.get_image_size["324"]["inputs"]["image"] = image_path
-            self.used_components.add("get_image_size")
-        else:
-            self.used_components.discard("get_image_size")
-            self.image_size["326"]["inputs"]["Number"] = int1
-            self.image_size["327"]["inputs"]["Number"] = int2
-            self.used_components.add("image_size")
-
-        # Connect the int1, int2 to empty_latent_width/height in efficient loader
+            print("CONTROLNET STACKER ID: ", controlnet_stacker_id)
+            print("IMAGE LOADER ID: ", image_loader_id)
+            print("LINK ID: ", link_id)
+            # set_controlnet_parameters(workflow, 
+            #                           settings, 
+            #                           controlnet_reference_image_path, 
+            #                           image_loader_id, 
+            #                           controlnet_stacker_id)
             
-        self.efficient_loader["206"]["inputs"]["empty_latent_width"][0] = "325" if image_path else "326"
-        self.efficient_loader["206"]["inputs"]["empty_latent_width"][1] = 0
-    
-        self.efficient_loader["206"]["inputs"]["empty_latent_height"][0] = "325" if image_path else "327"
-        self.efficient_loader["206"]["inputs"]["empty_latent_height"][1] = 1 if image_path else 0
+            print("WORFKLOW LAST LINK ID BEFORE: ", workflow['last_link_id'])
+            workflow['last_link_id'] = link_id
+            print("WORFKLOW LAST LINK ID AFTER: ", workflow['last_link_id'])
 
-    # def connect_lora(self, 
-    #                 count: int, 
-    #                 models: List[str], 
-    #                 strengths: List[str], 
-    #                 enabled: List[bool]):
-    #     """
-    #     ################# CONNECT LORA #################
-    #     (Optional) Connect lora to Efficient Loader
-    #     1. Connect lora to lora_stack in Efficient Loader
-    #     """
-    #     # Initialize lora_count to 0
-    #     self.lora_stacker["207"]["inputs"]["lora_count"] = 0
+            for node in workflow.get('nodes', []):
+                if node.get('id') == controlnet_stacker_id:
+                    print("WORFKLOW CONTROLNET STACKER OUTPUTS BEFORE: ", node['outputs'])
+                    print(f"Setting controlnet link for node {controlnet_stacker_id}")
+                    node['outputs'][0]['links'] = [link_id]
+                    print("WORFKLOW CONTROLNET STACKER OUTPUTS AFTER: ", node['outputs'])
+                    break
 
-    #     lora_connected = False
 
-    #     for i in range(count):  # Assuming 'enabled' has 4 elements.
-    #         if enabled[i]:
-    #             index = i + 1
-    #             self.lora_stacker["207"]["inputs"][f"lora_name_{index}"] = models[i]
-    #             self.lora_stacker["207"]["inputs"][f"model_str_{index}"] = strengths[i]
-    #             self.lora_stacker["207"]["inputs"]["lora_count"] += 1
-    #             lora_connected = True
-
-    #     if lora_connected:
-    #         self.used_components.add("lora_stacker")
-
-    def connect_random_prompts(self, 
-                               positive_prompt: str):
-        """
-        ################# CONNECT RANDOM PROMPTS #################
-        (Optional) Connect random prompts to the efficient loader
-        1. Set the prompt
-        2. Connect random prompts to the efficient loader as positive
-        """
-        # Set the pos prompt
-        self.random_prompts["222"]["inputs"]["text"] = positive_prompt
-        self.used_components.add("random_prompts")
-
-    def connect_efficient_loader(self, 
-                                ckpt_name: str, 
-                                negative_prompt: str, 
-                                batch_size: int,
-                                lora_enabled: List[bool],
-                                random_prompts_enabled: bool = True):
-        """
-        ################# SET UP EFFICIENT LOADER #################
-        (Default) Provide a configuration for the efficient loader
-        1. Set the model
-        2. Set the negative prompt
-        3. (Optional) connect model to ApplyIpAdapter1
-        4. (Default) connect model to model in KSamplerEfficient1
-        """
-
-        # Set the ckpt_name in efficient loader
-        self.efficient_loader["206"]["inputs"]["ckpt_name"] = ckpt_name
-
-        # Set the negative prompt in efficient loader
-        self.efficient_loader["206"]["inputs"]["negative"] = negative_prompt
-
-       # Set the batch size in efficient loader
-        self.efficient_loader["206"]["inputs"]["batch_size"] = batch_size
-
-        self.used_components.add("efficient_loader")
-
-        if random_prompts_enabled:
-            self.efficient_loader["206"]["inputs"]["positive"] = ["222", 0]
-
-        # print(f"LORA ENABLED: {lora_enabled}")
-        # if any(lora_enabled):
-        #     self.efficient_loader["206"]["inputs"]["lora_stack"] = ["207", 0]
-
-    def connect_ksampler_efficient1(self,
-                                    steps: int, 
-                                    cfg_scale: float, 
-                                    denoise: float, 
-                                    sampler: str, 
-                                    ipa1_enabled: bool = False):
-        """
-        ################# CONNECT KSAMPLER EFFICENT 2 #################
-        """
-        # self.ksampler_efficient1["229"]["inputs"]["seed"] = seed
-        self.ksampler_efficient1["229"]["inputs"]["steps"] = steps
-        self.ksampler_efficient1["229"]["inputs"]["cfg"] = cfg_scale
-        self.ksampler_efficient1["229"]["inputs"]["denoise"] = denoise
-        self.ksampler_efficient1["229"]["inputs"]["sampler_name"] = sampler
-
-        self.used_components.add("ksampler_efficient1")
-
-        if ipa1_enabled:
-            self.ksampler_efficient1["229"]["inputs"]["model"] = ["278", 0]
-        else:
-            self.ksampler_efficient1["229"]["inputs"]["model"] = ["206", 0]
+            for node in workflow.get('nodes', []):
+                if node.get('id') == 206:
+                    print("WORFKLOW KSAMPLER EFFICIENT INPUTS BEFORE: ", node['inputs'])
+                    print("Setting controlnet link for node 206")
+                    node['inputs'].append({
+                            "name": "cnet_stack",
+                            "type": "CONTROL_NET_STACK",
+                            "link": link_id,
+                            "slot_index": 1
+                        }
+                    )
+                    print("WORFKLOW KSAMPLER EFFICIENT INPUTS AFTER: ", node['inputs'])
+                    break
             
+            print("WORFKLOW LINKS BEFORE: ", workflow['links'])
+            workflow['links'].append([
+                  link_id,
+                  controlnet_stacker_id,
+                  0,
+                  206,
+                  1,
+                  "CONTROL_NET_STACK"
+                ]
+            )
+            print("WORFKLOW LINKS AFTER: ", workflow['links'])
 
 
-    def connect_ip_adapter_1(self, 
-                             image_path: str, 
-                             model: str, 
-                             weight: int = 1, 
-                             noise: int = 0, 
-                             weight_type: str = "original", 
-                             start_at: int = 0, 
-                             end_at: int = 1):
-        """
-        ################# CONNECT IP ADAPTER 1 #################
-        (Optional) Provide configuration for ip adapter 1, connect it to the KSamplerEfficient
-        1. Set the image path for both (or the first one only) adapters
-        2. Set the model for load ipadapter model
-        3. (Optional) set weight, set noise, set weight_type, set start_at, set end_at
-        4. Disconnect efficient loader model from ksamplerefficient, connect the 
-        efficient loader’s model to apply adapter model and connect apply adapter
-        model to ksamplerefficient model
-        """
-        # set the image path
-        self.ipa1["390"]["inputs"]["image"] = image_path
-
-        # set parameters
-        self.ipa1["278"]["inputs"]["weight"] = weight
-        self.ipa1["278"]["inputs"]["noise"] = noise
-        self.ipa1["278"]["inputs"]["weight_type"] = weight_type
-        self.ipa1["278"]["inputs"]["start_at"] = start_at
-        self.ipa1["278"]["inputs"]["end_at"] = end_at
-
-        self.ipa1["279"]["inputs"]["ipadapter_file"] = model
-
-        self.used_components.add("ipa1")
-
-    def connect_ksampler_efficient2(self, 
-                                    seed: int, 
-                                    steps: int, 
-                                    cfg_scale: float, 
-                                    denoise: float, 
-                                    sampler: str, 
-                                    ipa2_enabled: bool = True):
-        """
-        ################# CONNECT KSAMPLER EFFICENT 2 #################
-        """
-
-        self.ksampler_efficient2["246"]["inputs"]["seed"] = seed
-        self.ksampler_efficient2["246"]["inputs"]["steps"] = steps
-        self.ksampler_efficient2["246"]["inputs"]["cfg"] = cfg_scale
-        self.ksampler_efficient2["246"]["inputs"]["denoise"] = denoise
-        self.ksampler_efficient2["246"]["inputs"]["sampler_name"] = sampler
-
-        self.used_components.add("ksampler_efficient2")
-
-        if ipa2_enabled:
-            self.ksampler_efficient2["246"]["inputs"]["model"] = ["284", 0]
-        else:
-            self.ksampler_efficient2["246"]["inputs"]["model"] = ["229", 0]
-
-    def connect_ip_adapter_2(self, 
-                             image_path: str, 
-                             ipa_model: str, 
-                             civitai_model: str = "", 
-                             weight: int = 1, 
-                             noise: int = 0, 
-                             weight_type: str = "original", 
-                             start_at: int = 0, 
-                             end_at: int = 1,
-                             civitai_enabled: bool = False):
-        """
-        ################# CONNECT IP ADAPTER 2 #################
-        (Optional) Provide configuration for ip adapter 2, connect it to the KSamplerEfficient
-        1. (Optional) Set the second image path for the second one only adapter - disconnect the first image loader from apply ip adapter and connect the second one
-        2. Set the model for load ipadapter model
-        3. (Optional) set weight, set noise, set weight_type, set start_at, set end_at
-        4. Set the civitai model
-        5. Disconnect ksamplerefficient1 model entirely from ksamplerefficient2 model, connect the  applyipadapter2 model to ksamplerefficient model
-        """
-        if image_path:
-            # set the image path for the second image loader
-            self.ipa2["288"]["inputs"]["image"] = image_path
-
-            # disconnect the first image loader from apply ip adapter and connect the second one
-            self.ipa2["284"]["inputs"]["image"] = ["288", 0]
-        else:
-            # disconnect the second image loader from apply ip adapter and connect the first one
-            self.ipa2["284"]["inputs"]["image"] = ["390", 0]
-
-        self.ipa2["285"]["inputs"]["ipadapter_file"] = ipa_model
-        
-        # set parameters
-        self.ipa2["284"]["inputs"]["weight"] = weight
-        self.ipa2["284"]["inputs"]["noise"] = noise
-        self.ipa2["284"]["inputs"]["weight_type"] = weight_type
-        self.ipa2["284"]["inputs"]["start_at"] = start_at
-        self.ipa2["284"]["inputs"]["end_at"] = end_at
-
-        self.used_components.add("ipa2")
-
-        # if civitai_enabled:
-        #     self.ipa2["251"]["inputs"]["ckpt_name"] = civitai_model
-
-        #     self.ipa2["284"]["inputs"]["model"] = ["251", 0]
-        # else:
-        #     self.ipa2["284"]["inputs"]["model"] = ["229", 0]
-
-def generate_workflow(settings: Settings, 
-                      image_ids: List[str], 
-                      image_formats: List[str]) -> Optional[dict]:
+def generate_workflow(settings: Settings, reference_image_path, controlnet_reference_image_path) -> Optional[dict]:
     try:
-        print("INITIALIZING MODEL INTERFACE")
-        model_interface = ModelInterface()
+        with open('./comfyui/workflow.json', 'r') as file:
+            workflow = json.load(file)
 
-        predefined_path = os.getenv('COMFYUI_PREDEFINED_PATH')
+        set_basic_settings(workflow, settings, reference_image_path)
+        set_controlnet(workflow, settings, controlnet_reference_image_path)
 
-        format_map = {"jpeg": ".jpeg",
-                      "heic": ".heic",
-                      "png": ".png"}
-
-        print("CHOOSING OUTPUT SIZE")
-        model_interface.choose_output_size(int1=settings.basic_width, 
-                                           int2=settings.basic_height)
-
-        # if any(settings.lora_enabled):
-        #     print("CONNECTING LORA")
-        #     model_interface.connect_lora(count=settings.lora_count, 
-        #                                  models=settings.lora_models, 
-        #                                  strengths=settings.lora_strengths, 
-        #                                  enabled=settings.lora_enabled)
-
-        if settings.pos_prompt_enabled:
-            print("CONNECTING RANDOM PROMPTS")
-            model_interface.connect_random_prompts(positive_prompt=settings.basic_pos_text_prompt)
-
-        print("CONNECTING EFFICIENT LOADER")
-        model_interface.connect_efficient_loader(ckpt_name=settings.basic_model,
-                                                 negative_prompt=settings.basic_neg_text_prompt,
-                                                 batch_size=settings.basic_batch_size,
-                                                 lora_enabled=settings.lora_enabled,
-                                                 random_prompts_enabled=settings.pos_prompt_enabled)
-        
-        if settings.ipa_1_enabled:
-            print("CONNECTING IPA 1")
-
-            file_extension = format_map[image_formats[0]]
-            settings.ipa_1_reference_image = predefined_path + "/" + image_ids[0] + file_extension
-
-            model_interface.connect_ip_adapter_1(image_path=settings.ipa_1_reference_image,
-                                                 model=settings.ipa_1_model,
-                                                 weight=settings.ipa_1_weight,
-                                                 noise=settings.ipa_1_noise,
-                                                 weight_type=settings.ipa_1_weight_type,
-                                                 start_at=settings.ipa_1_start_at,
-                                                 end_at=settings.ipa_1_end_at)
-            
-
-        model_interface.connect_ksampler_efficient1(steps=settings.basic_sampling_steps,
-                                                    cfg_scale=settings.basic_cfg_scale,
-                                                    denoise=settings.basic_denoise,
-                                                    sampler=settings.basic_sampler_method,
-                                                    ipa1_enabled=settings.ipa_1_enabled)
-        
-        if settings.refinement_enabled:
-            if settings.ipa_2_enabled:
-                if settings.ipa_2_reference_image:
-                    file_extension = format_map[image_formats[1]]
-                    settings.ipa_2_reference_image = predefined_path + "/" + image_ids[1] + file_extension
-
-                model_interface.connect_ip_adapter_2(image_path=settings.ipa_2_reference_image,
-                                                     ipa_model=settings.ipa_2_model,
-                                                     civitai_model=settings.civitai_model,
-                                                     weight=settings.ipa_2_weight,
-                                                     noise=settings.ipa_2_noise,
-                                                     weight_type=settings.ipa_2_weight_type,
-                                                     start_at=settings.ipa_2_start_at,
-                                                     end_at=settings.ipa_2_end_at,
-                                                     civitai_enabled=settings.civitai_enabled)
-
-            model_interface.connect_ksampler_efficient2(seed=settings.refinement_seed,
-                                                        steps=settings.refinement_steps,
-                                                        cfg_scale=settings.refinement_cfg_scale,
-                                                        denoise=settings.refinement_denoise,
-                                                        sampler=settings.refinement_sampler,
-                                                        ipa2_enabled=settings.ipa_2_enabled)
-
-        final_json = model_interface.finalize()
-
-        return final_json
+        return workflow
 
     except Exception as e:
         print(f"AN ERROR OCCURRED DURING WORKFLOW EXECUTION: {str(e)}")

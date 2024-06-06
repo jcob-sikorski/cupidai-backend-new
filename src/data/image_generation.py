@@ -11,16 +11,12 @@ from .init import comfyui_col, settings_col
 
 def update_message(user_id: str, 
                    status: Optional[str] = None, 
-                   uploadcare_uris: Optional[List[str]] = None, 
                    message_id: Optional[str] = None, 
-                   settings_id: Optional[str] = None, 
-                   s3_uris: Optional[List[str]] = None) -> None:
+                   s3_uris: Optional[List[str]] = None):
     message = Message(
         user_id=user_id,
         status=status,
-        uploadcare_uris=uploadcare_uris,
         message_id=message_id,
-        settings_id=settings_id,
         s3_uris=s3_uris
     )
 
