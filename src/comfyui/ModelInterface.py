@@ -38,109 +38,12 @@ def set_controlnet_parameters(workflow,
             node['widgets_values'][0] = controlnet_reference_image_path
         elif node_id == int(controlnet_stacker_id):
             print(f"Setting controlnet stacker values for node {controlnet_stacker_id}")
-            node['widgets_values'][0] = float(settings.strength)/100
-            node['widgets_values'][1] = float(settings.start_percent)/100
-            node['widgets_values'][2] = float(settings.end_percent)/100
+            node['widgets_values'][0] = float(settings.controlnet_strength)/100
+            node['widgets_values'][1] = float(settings.controlnet_start_percent)/100
+            node['widgets_values'][2] = float(settings.controlnet_end_percent)/100
 
 
 def set_controlnet(workflow, settings, controlnet_reference_image_path):
-
-# for ip2p: 217 <-> 219
-# for canny: 214 <-> 220
-# for midas: 211 <-> 221
-# for openpose: 208 <-> 222
-
-# set last link id as:
-# {
-#   "last_node_id": 320,
-#   "last_link_id": 219,
-
-# add to controlnet stacket outputs:
-    # {
-    #   "id": 217,
-    #   "type": "Control Net Stacker",
-    #   "pos": [
-    #     -1977.0729068818039,
-    #     1786.3307342155315
-    #   ],
-    #   "size": {
-    #     "0": 315,
-    #     "1": 146
-    #   },
-    #   "flags": {},
-    #   "order": 28,
-    #   "mode": 0,
-    #   "inputs": [
-    #     {
-    #       "name": "control_net",
-    #       "type": "CONTROL_NET",
-    #       "link": 28,
-    #       "slot_index": 0
-    #     },
-    #     {
-    #       "name": "image",
-    #       "type": "IMAGE",
-    #       "link": 26
-    #     },
-    #     {
-    #       "name": "cnet_stack",
-    #       "type": "CONTROL_NET_STACK",
-    #       "link": null,
-    #       "slot_index": 2
-    #     }
-    #   ],
-    #   "outputs": [
-    #     {
-    #       "name": "CNET_STACK",
-    #       "type": "CONTROL_NET_STACK",
-    #       "links": [
-    #         219
-    #       ],
-    #       "shape": 3,
-    #       "slot_index": 0
-    #     }
-    #   ],
-
-    # add to kefficient loader inputs:
-#    {
-#       "id": 206,
-#       "type": "Efficient Loader",
-#       "pos": [
-#         -410,
-#         175
-#       ],
-#       "size": {
-#         "0": 386.65386962890625,
-#         "1": 671.7037963867188
-#       },
-#       "flags": {},
-#       "order": 34,
-#       "mode": 0,
-#       "inputs": [
-#         {
-#           "name": "lora_stack",
-#           "type": "LORA_STACK",
-#           "link": 15,
-#           "slot_index": 0
-#         },
-#         {
-#           "name": "cnet_stack",
-#           "type": "CONTROL_NET_STACK",
-#           "link": 219,
-#           "slot_index": 1
-#         },
-
-# add to links:
-#     [
-#       219,
-#       217,
-#       0,
-#       206,
-#       1,
-#       "CONTROL_NET_STACK"
-#     ]
-#   ],
-
     if settings.controlnet_enabled:
         print("Controlnet is enabled")
         link_map = {
@@ -156,11 +59,12 @@ def set_controlnet(workflow, settings, controlnet_reference_image_path):
             print("CONTROLNET STACKER ID: ", controlnet_stacker_id)
             print("IMAGE LOADER ID: ", image_loader_id)
             print("LINK ID: ", link_id)
-            # set_controlnet_parameters(workflow, 
-            #                           settings, 
-            #                           controlnet_reference_image_path, 
-            #                           image_loader_id, 
-            #                           controlnet_stacker_id)
+
+            set_controlnet_parameters(workflow, 
+                                      settings, 
+                                      controlnet_reference_image_path, 
+                                      image_loader_id, 
+                                      controlnet_stacker_id)
             
             print("WORFKLOW LAST LINK ID BEFORE: ", workflow['last_link_id'])
             workflow['last_link_id'] = link_id
