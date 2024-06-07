@@ -14,8 +14,8 @@
       "negative": "clothed, portrait, face, nfixer, (nrealfixer:1.4), nartfixerearings, body rolls, , holding phone, phone, phones, bokeh, (background blur:1.4), bokeh, (reflective skin:1.3), (glowing skin:1.5), nose piercing, (NSFW:1.5), (smooth skin:1.6), (disfigured iris:1.2), (bad eyes:1.4), phone, (holding phone:1.4), nfixer, (nrealfixer:1.4), nartfixer,  cartoon, (3d:1.4), (disfigured), (bad art), (deformed), (poorly drawn), (extra limbs), (close up), strange colours, blurry, boring, sketch, lackluster, face portrait, signature, letters, watermark, grayscale\n",
       "token_normalization": "none",
       "weight_interpretation": "comfy",
-      "empty_latent_width": 896,
-      "empty_latent_height": 1600,
+      "empty_latent_width": 512,
+      "empty_latent_height": 512,
       "batch_size": 4,
       "lora_stack": [
         "207",
