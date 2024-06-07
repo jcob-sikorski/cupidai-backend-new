@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, BackgroundTasks
 
-from typing import Annotated, Dict, Optional
+from typing import Annotated, Optional, List
 
 from model.account import Account
 from model.image_generation import Settings, Message
@@ -30,3 +30,8 @@ async def generate(settings: Settings,
 @router.get("/recent-batch", status_code=200)  # Retrieves most recent batch
 async def get_batch(user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[Message]:
     return service.get_batch(user)
+
+
+@router.get("/history", status_code=200)  # Retrieves most recent batch
+async def get_history(user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[List[Message]]:
+    return service.get_history(user)

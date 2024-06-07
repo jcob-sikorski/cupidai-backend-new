@@ -55,3 +55,17 @@ def get_batch(user_id: str) -> Optional[Message]:
         return message
     else:
         return None
+    
+
+def get_history(user_id: str) -> Optional[List[Message]]:
+    cursor = comfyui_col.find({
+        "user_id": user_id, "status": "completed"
+    }).sort("created_at", DESCENDING).limit(10)
+    
+    result = list(cursor)
+    
+    if result:
+        messages = [Message(**doc) for doc in result]
+        return messages
+    else:
+        return None

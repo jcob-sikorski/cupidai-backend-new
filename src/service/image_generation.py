@@ -159,3 +159,6 @@ async def generate(settings: Settings,
 
 def get_batch(user: Account) -> Optional[Message]:
     return data.get_batch(user.user_id)
+
+def get_history(user: Account) -> Optional[List[Message]]:
+    return data.get_history(user.user_id)
