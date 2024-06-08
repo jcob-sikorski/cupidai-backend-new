@@ -115,6 +115,41 @@ def initiate_photo_faceswap(source_uri: str,
     else:
         raise HTTPException(status_code=403, detail="Upgrade your plan to unlock permissions.")
     
+
+def initiate_video_faceswap(source_uri: str,
+                            target_uri: str,
+                            video_uri: str,
+                            user: Account) -> Optional[Message]:
+    
+    if billing_service.has_permissions("Realistic AI Content Deepfake", user):
+        valid_formats = ['jpeg', 'png', 'mp4']
+
+        deepfake_service.check_file_formats(target_uri,
+                                            valid_formats)
+        deepfake_service.check_file_formats(source_uri,
+                                            valid_formats)
+        
+        deepfake_service.check_file_formats(video_uri,
+                                            valid_formats)
+                       
+        source_opts = face_detect(source_uri)
+        target_opts = face_detect(target_uri)
+          
+        try:
+            message = run_video_faceswap(source_uri,
+                                         target_uri,
+                                         video_uri,
+                                         source_opts,
+                                         target_opts,
+                                         user.user_id)
+
+            return message
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Failed to generate a video deepfake.")
+    else:
+        raise HTTPException(status_code=403, detail="Upgrade your plan to unlock permissions.")
+
+    
 def run_photo_faceswap(source_uri: str, # photo of the old face from the photo
                        target_uri: str, # photo of the new face for the photo
                        source_opts: str, # some params for the old face
@@ -155,6 +190,49 @@ def run_photo_faceswap(source_uri: str, # photo of the old face from the photo
     except ValueError:
         raise HTTPException(status_code=400, 
                             detail="Failed to generate photo deepfake.")
+    
+
+def run_video_faceswap(source_uri: str, # photo of the old face from the photo
+                       target_uri: str, # photo of the new face for the photo
+                       video_uri: str,
+                       source_opts: str, # some params for the old face
+                       target_opts: str, # some params for the new face
+                       user_id: str) -> Optional[Message]:
+    
+    url = "https://openapi.akool.com/api/open/v3/faceswap/highquality/specifyvideo"
+
+    headers = {
+      'Authorization': f"Bearer {os.getenv('AKOOL_ACCESS_TOKEN')}",
+      'Content-Type': 'application/json'
+    }
+
+    payload = {
+      "sourceImage": [{ # array of new faces
+            "path": source_uri,
+            "opts": source_opts
+        },],
+      "targetImage": [{ # array of old faces
+            "path": target_uri,
+            "opts": target_opts
+        },],
+      "face_enhance": 1,
+      "modifyVideo": video_uri, # photo to modify
+      "webhookUrl": f"{os.getenv('ROOT_DOMAIN')}/akool-deepfake/webhook"
+    }
+
+    print("SENDING REQUEST TO AKOOL")
+    try:
+        message = send_post_request(url,
+                                    headers,
+                                    payload,
+                                    source_uri,
+                                    target_uri,
+                                    user_id)
+        
+        return message
+    except ValueError:
+        raise HTTPException(status_code=400, 
+                            detail="Failed to generate video deepfake.")
     
 
 def send_post_request(url: str, 

@@ -22,14 +22,29 @@ async def webhook(response: dict) -> None:
         raise HTTPException(status_code=400, detail="Invalid signature.")
 
 
-class AkoolGenerateRequest(BaseModel):
+
+class AkoolGeneratePhotoRequest(BaseModel):
     source_uri: str
     target_uri: str
 
 
-@router.post("/generate", status_code=201)
-async def generate(req: AkoolGenerateRequest,
-                   user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[Message]:
+@router.post("/photo", status_code=201)
+async def generate_photo(req: AkoolGeneratePhotoRequest,
+                         user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[Message]:
     return service.initiate_photo_faceswap(req.source_uri, 
                                            req.target_uri,
+                                           user)
+
+
+class AkoolGenerateVideoRequest(BaseModel):
+    source_uri: str
+    target_uri: str
+    video_uri: str
+
+@router.post("/video", status_code=201)
+async def generate_video(req: AkoolGenerateVideoRequest,
+                         user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> Optional[Message]:
+    return service.initiate_video_faceswap(req.source_uri, 
+                                           req.target_uri,
+                                           req.video_uri,
                                            user)

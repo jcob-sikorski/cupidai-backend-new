@@ -27,7 +27,7 @@ def set_controlnet_parameters(workflow,
     
     workflow[str(image_loader_id)]['inputs']['image'] = controlnet_reference_image_path
 
-    workflow[str(controlnet_stacker_id)]['inputs']['strength'] = float(settings.controlnet_strength)/100
+    workflow[str(controlnet_stacker_id)]['inputs']['strength'] = float(settings.controlnet_strength)/10
     workflow[str(controlnet_stacker_id)]['inputs']['start_percent'] = float(settings.controlnet_start_percent)/100
     workflow[str(controlnet_stacker_id)]['inputs']['end_percent'] = float(settings.controlnet_end_percent)/100
 
