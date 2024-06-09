@@ -388,7 +388,7 @@
   "222": {
     "inputs": {
       "text": "dimly lit, (amateur:1.2), amateur candid selfie of 19 year old female, brown eyes, cute, big boobs, big cleavage, big breasts, mixed race black, small nose, (afro hair:1.2), messy hair, neutral face, freckles, spots, acne, wearing {black|blue|orange|white|green|purple} {jacket|blouse|t-shirt|dress|gym bra}, indoors bedroom, epiCPhoto",
-      "seed": 1842,
+      "seed": 556,
       "autorefresh": "No"
     },
     "class_type": "DPRandomGenerator",
@@ -416,7 +416,7 @@
   },
   "229": {
     "inputs": {
-      "seed": -1,
+      "seed": 492454333525120,
       "steps": 40,
       "cfg": 4,
       "sampler_name": "dpmpp_sde_gpu",
@@ -481,7 +481,7 @@
   },
   "246": {
     "inputs": {
-      "seed": -1,
+      "seed": 855302778539298,
       "steps": 40,
       "cfg": 4,
       "sampler_name": "dpmpp_sde_gpu",
