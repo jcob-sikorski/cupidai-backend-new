@@ -30,12 +30,12 @@
   "207": {
     "inputs": {
       "input_mode": "simple",
-      "lora_count": 2,
-      "lora_name_1": "add_detail.safetensors",
+      "lora_count": 3,
+      "lora_name_1": "epiNoiseoffset_v2.pt",
       "lora_wt_1": 1.2,
       "model_str_1": 1,
       "clip_str_1": 1,
-      "lora_name_2": "epiNoiseoffset_v2Pynoise.safetensors",
+      "lora_name_2": "clothing_slider_v19_000000030.safetensors",
       "lora_wt_2": 1.2,
       "model_str_2": 1,
       "clip_str_2": 1,
@@ -388,7 +388,7 @@
   "222": {
     "inputs": {
       "text": "dimly lit, (amateur:1.2), amateur candid selfie of 19 year old female, brown eyes, cute, big boobs, big cleavage, big breasts, mixed race black, small nose, (afro hair:1.2), messy hair, neutral face, freckles, spots, acne, wearing {black|blue|orange|white|green|purple} {jacket|blouse|t-shirt|dress|gym bra}, indoors bedroom, epiCPhoto",
-      "seed": 352,
+      "seed": 1842,
       "autorefresh": "No"
     },
     "class_type": "DPRandomGenerator",
@@ -416,7 +416,7 @@
   },
   "229": {
     "inputs": {
-      "seed": 432906157340179,
+      "seed": -1,
       "steps": 40,
       "cfg": 4,
       "sampler_name": "dpmpp_sde_gpu",
@@ -481,7 +481,7 @@
   },
   "246": {
     "inputs": {
-      "seed": 408828654347634,
+      "seed": -1,
       "steps": 40,
       "cfg": 4,
       "sampler_name": "dpmpp_sde_gpu",
@@ -518,7 +518,7 @@
   "251": {
     "inputs": {
       "ckpt_air": "{model_id}@{model_version}",
-      "ckpt_name": "stablegramUSEuropean_v21.safetensors",
+      "ckpt_name": "edgeOfRealism_eorV20Fp16BakedVAE.safetensors",
       "download_chunks": 4,
       "download_path": "models\\checkpoints"
     },
@@ -532,8 +532,8 @@
       "weight": 0.5,
       "noise": 0,
       "weight_type": "original",
-      "start_at": 0.2,
-      "end_at": 0.5,
+      "start_at": 0,
+      "end_at": 1,
       "unfold_batch": false,
       "ipadapter": [
         "279",
