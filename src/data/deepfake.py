@@ -10,8 +10,10 @@ from .init import deepfake_col
 
 def create_message(user_id: Optional[str] = None,
                    status: Optional[str] = None,
-                   source_uri: Optional[str] = None,
-                   target_uri: Optional[str] = None,
+                   facefusion_source_uris: Optional[List[str]] = None,
+                   facefusion_target_uri: Optional[str] = None,
+                   akool_source_uri: Optional[str] = None,
+                   akool_target_uri: Optional[str] = None,
                    job_id: Optional[str] = None,
                    output_url: Optional[str] = None) -> Optional[Message]:
     
@@ -20,8 +22,10 @@ def create_message(user_id: Optional[str] = None,
     message = Message(
         user_id=user_id,
         status=status,
-        source_uri=source_uri, 
-        target_uri=target_uri,
+        facefusion_source_uris=facefusion_source_uris,
+        facefusion_target_uri=facefusion_target_uri,
+        akool_source_uri=akool_source_uri, 
+        akool_target_uri=akool_target_uri,
         job_id=job_id,
         output_url=output_url,
         created_at=now
@@ -37,16 +41,20 @@ def create_message(user_id: Optional[str] = None,
 
 def update_message(user_id: Optional[str] = None, 
                    status: Optional[str] = None,
-                   source_uri: Optional[str] = None,
-                   target_uri: Optional[str] = None,
+                   facefusion_source_uris: Optional[List[str]] = None,
+                   facefusion_target_uri: Optional[str] = None,
+                   akool_source_uri: Optional[str] = None,
+                   akool_target_uri: Optional[str] = None,
                    job_id: Optional[str] = None,
                    output_url: Optional[str] = None) -> Optional[str]:
     
     message = Message(
         user_id=user_id,
         status=status,
-        source_uri=source_uri,
-        target_uri=target_uri,
+        facefusion_source_uris=facefusion_source_uris,
+        facefusion_target_uri=facefusion_target_uri,
+        akool_source_uri=akool_source_uri,
+        akool_target_uri=akool_target_uri,
         job_id=job_id,
         output_url=output_url
     )
