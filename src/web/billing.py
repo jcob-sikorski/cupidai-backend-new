@@ -11,7 +11,8 @@ import os
 from model.account import Account
 from model.billing import (Plan, 
                            RadomCheckoutRequest, 
-                           PaypalCheckoutSessionRequest)
+                           PaypalCheckoutSessionRequest,
+                           GCRequest)
 
 from service import account as account_service
 import service.billing as service
@@ -34,6 +35,12 @@ async def create_radom_checkout_session(req: RadomCheckoutRequest,
                                         user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> None:
     return service.create_radom_checkout_session(req,
                                                  user)
+
+@router.post('/gc/create-checkout', status_code=200)
+async def create_gc_checkout_session(req: GCRequest,
+                                     user: Annotated[Account, Depends(account_service.get_current_active_user)]) -> str:
+    return await service.create_gc_checkout_session(req,
+                                                    user)
 
 
 @router.post('/webhook')
@@ -59,6 +66,12 @@ async def webhook(request: Request) -> None:
 async def paypal_webhook(request: Request) -> None:
     print("\n\nPAYPAL WEBHOOK HIT")
     return await service.paypal_webhook(request)
+
+
+@router.post('/gc-webhook')
+async def gc_webhook(request: Request) -> None:
+    print("\n\nGO CARDLESS WEBHOOK HIT")
+    return await service.gc_webhook(request)
 
 
 @router.post("/paypal/create-checkout-metadata", status_code=201)  # Links user id with generated uuid which then is passed as custom_id in paypal button

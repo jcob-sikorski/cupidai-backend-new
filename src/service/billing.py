@@ -8,6 +8,10 @@ import requests
 
 import json
 
+import pprint
+
+import gocardless_pro
+
 from uuid import uuid4
 
 import base64
@@ -18,7 +22,7 @@ from model.account import Account
 
 from model.billing import (Plan, RadomCheckoutRequest, 
                            RadomCheckoutSessionMetadata, PaymentAccount,
-                           PaypalCheckoutMetadata)
+                           PaypalCheckoutMetadata, GCRequest)
 
 import service.account as account_service
 
@@ -231,6 +235,8 @@ async def radom_webhook(request: Request) -> None:
                                radom_checkout_session_id=radom_checkout_session_id, 
                                amount=amount,
                                radom_product_id=radom_product_id,
+                               gc_billing_request_id=None,
+                               plan_id=None,
                                referral_id=referral_id,
                                status="active")
         
@@ -282,8 +288,6 @@ async def radom_webhook(request: Request) -> None:
 
     return
 
-# TODO: when it comes to the UI we should show the user status of the subscription
-#       like active, processed, etc.
 
 async def paypal_webhook(request: Request) -> None:
     # Read the request body
@@ -342,6 +346,8 @@ async def paypal_webhook(request: Request) -> None:
                                                  radom_checkout_session_id=None, 
                                                  amount=amount,
                                                  radom_product_id=None,
+                                                 gc_billing_request_id=None,
+                                                 plan_id=None,
                                                  referral_id=internal_metadata.referral_id,
                                                  status="active")
         
@@ -447,6 +453,93 @@ async def paypal_webhook(request: Request) -> None:
         print("Unhandled event type:", event_type)
     
     return {"status": "success"}
+
+
+async def create_gc_checkout_session(req: GCRequest,
+                                     user: Account) -> str:
+    
+    SANDBOX_ACCESS_TOKEN = "sandbox_3c1d8dUhpG3tAe7Lzf5TC5AhCJ5cMCG9D2Pn-vCR"
+
+    client = gocardless_pro.Client(access_token=SANDBOX_ACCESS_TOKEN, environment='sandbox')
+
+    plan = get_product(plan_id=req.plan_id)
+
+    billing_request = client.billing_requests.create(params={
+        "payment_request": {
+            "description": plan.name,
+            "amount": f"{int(plan.price*100)}",
+            "currency": "GBP",
+            "app_fee": f"{int(plan.price*100)}"
+        },
+        "mandate_request": {
+            "scheme": "bacs"
+        }
+    })
+
+    print("\nBILLING REQUEST:")
+    pprint.pprint(vars(billing_request))
+
+    # Extract the billing request ID
+    billing_request_id = billing_request.id
+    print("\nBILLING REQUEST ID:", billing_request_id)
+
+    billing_request_flow = client.billing_request_flows.create(params={
+        "redirect_uri": "https://cloud.cupidai.tech/transaction-processed",
+        "exit_uri": "https://cloud.cupidai.tech/transaction-failed",
+        "links": {
+            "billing_request": billing_request_id
+        }
+    })
+
+
+    create_payment_account(user_id=user.user_id,
+                           provider="gc",
+                           paypal_plan_id=None,
+                           paypal_subscription_id=None,
+                           radom_subscription_id=None, 
+                           radom_checkout_session_id=None, 
+                           amount=plan.price,
+                           radom_product_id=None,
+                           gc_billing_request_id=billing_request_id,
+                           plan_id=plan.plan_id,
+                           referral_id=req.referral_id,
+                           status="disabled")
+
+    print("\nBILLING REQUEST FLOW:")
+    pprint.pprint(vars(billing_request_flow))
+
+
+    # Extract and print the authorization URL
+    authorisation_url = billing_request_flow.attributes['authorisation_url']
+    print("\nAUTHORISATION URL:", authorisation_url)
+
+    return authorisation_url
+
+async def gc_webhook(request: Request):
+    payload = await request.json()
+    print("GC REQUEST BODY:", json.dumps(payload, indent=4))
+
+    for event in payload.get("events", []):
+        action = event.get("action")
+        billing_request_id = event["links"].get("billing_request")
+        mandate_id = event["links"].get("mandate")
+
+        print('ACTION:', action)
+
+        if billing_request_id:
+            if mandate_id:
+                create_payment_account(gc_billing_request_id=billing_request_id,
+                                       gc_mandate_id=mandate_id)
+
+            elif action in ["confirmed", "failed"]:
+                create_payment_account(gc_billing_request_id=billing_request_id,
+                                       status="active" if action == "confirmed" else "disabled")
+
+            # print(f"Updated billing request {billing_request_id}: {billing_requests[billing_request_id]}")
+        else:
+            print(f"Event does not contain billing_request_id: {event}")
+
+    return {"status": "ok"}
 
 
 def paypal_create_checkout_metadata(referral_id: Optional[str], 
@@ -604,6 +697,11 @@ def create_payment_account(user_id: Optional[str] = None,
                            radom_checkout_session_id: Optional[str] = None,
                            amount: Optional[float] = None,
                            radom_product_id: Optional[str] = None,
+                           gc_billing_request_id: Optional[str] = None,
+                           gc_customer_id: Optional[str] = None,
+                           gc_payment_id: Optional[str] = None,
+                           gc_mandate_id: Optional[str] = None,
+                           plan_id: Optional[str] = None,
                            status: Optional[str] = None,
                            referral_id: Optional[str] = None) -> Optional[PaymentAccount]:
     
@@ -615,6 +713,11 @@ def create_payment_account(user_id: Optional[str] = None,
                                        radom_checkout_session_id,
                                        amount,
                                        radom_product_id,
+                                       gc_billing_request_id,
+                                       gc_customer_id,
+                                       gc_payment_id,
+                                       gc_mandate_id,
+                                       plan_id,
                                        status,
                                        referral_id)
 
@@ -622,22 +725,26 @@ def create_payment_account(user_id: Optional[str] = None,
 def set_payment_account_status(user_id: Optional[str] = None,
                                paypal_subscription_id: Optional[str] = None,
                                radom_subscription_id: Optional[str] = None,
+                               gc_billing_request_id: Optional[str] = None,
                                status: Optional[str] = None) -> None:
     return data.set_payment_account_status(user_id,
                                            paypal_subscription_id,
                                            radom_subscription_id,
+                                           gc_billing_request_id,
                                            status)
 
 
 def get_payment_account(user_id: str = None,
                         paypal_subscription_id: str = None,
                         radom_checkout_session_id: str = None,
-                        radom_subscription_id: str = None) -> Optional[PaymentAccount]:
+                        radom_subscription_id: str = None,
+                        gc_billing_request_id: str = None) -> Optional[PaymentAccount]:
     
     return data.get_payment_account(user_id,
                                     paypal_subscription_id,
                                     radom_checkout_session_id,
-                                    radom_subscription_id)
+                                    radom_subscription_id,
+                                    gc_billing_request_id)
 
 
 def get_current_plan(user: Account) -> Optional[Plan]:

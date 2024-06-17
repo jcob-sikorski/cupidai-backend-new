@@ -12,6 +12,11 @@ class PaymentAccount(BaseModel):
     radom_subscription_id: str | None = None
     radom_checkout_session_id: str | None = None
     amount: float | None = None
+    gc_billing_request_id: str | None = None
+    gc_customer_id: str | None = None
+    gc_payment_id: str | None = None
+    gc_mandate_id: str | None = None
+    plan_id: str | None = None
     referral_id: Optional[str] = None
     status: str | None = None # disabled, active, payment processsed
 
@@ -52,4 +57,8 @@ class PaypalCheckoutSessionRequest(BaseModel):
 class PaypalCheckoutMetadata(BaseModel):
     uuid: str
     user_id: str
+    referral_id: Optional[str] = None
+
+class GCRequest(BaseModel):
+    plan_id: str
     referral_id: Optional[str] = None

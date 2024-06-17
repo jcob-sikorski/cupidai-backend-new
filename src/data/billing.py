@@ -20,12 +20,22 @@ def create_payment_account(user_id: str,
                            radom_checkout_session_id: Optional[str] = None,
                            amount: Optional[float] = None,
                            radom_product_id: Optional[str] = None,
+                           gc_billing_request_id: Optional[str] = None,
+                           gc_customer_id: Optional[str] = None,
+                           gc_payment_id: Optional[str] = None,
+                           gc_mandate_id: Optional[str] = None,
+                           plan_id: Optional[str] = None,
                            status: Optional[str] = None,
                            referral_id: Optional[str] = None) -> Optional[PaymentAccount]:
     
     print("CREATING PAYMENT ACCOUNT")
 
-    payment_account = payment_account_col.find_one({"user_id": user_id})
+    payment_account = payment_account_col.find_one({
+        "$or": [
+            {"user_id": user_id},
+            {"gc_billing_request_id": gc_billing_request_id}
+        ]
+    })
 
     if not payment_account:
         print("PAYMENT ACCOUNT NOT FOUND - CREATING NEW ONE...")
@@ -39,6 +49,11 @@ def create_payment_account(user_id: str,
             "radom_checkout_session_id": radom_checkout_session_id,
             "amount": amount,
             "radom_product_id": radom_product_id,
+            "gc_billing_request_id": gc_billing_request_id,
+            "gc_customer_id": gc_customer_id,
+            "gc_payment_id": gc_payment_id,
+            "gc_mandate_id": gc_mandate_id,
+            "plan_id": plan_id,
             "status": status,
             "referral_id": referral_id
         }
@@ -55,6 +70,11 @@ def create_payment_account(user_id: str,
             "radom_checkout_session_id": radom_checkout_session_id,
             "amount": amount,
             "radom_product_id": radom_product_id,
+            "gc_billing_request_id": gc_billing_request_id,
+            "gc_customer_id": gc_customer_id,
+            "gc_payment_id": gc_payment_id,
+            "gc_mandate_id": gc_mandate_id,
+            "plan_id": plan_id,
             "status": status,
         }
         
@@ -66,7 +86,12 @@ def create_payment_account(user_id: str,
         print(f"PAYMENT ACCOUNT MODEL FOR UPDATE: {update_fields}")
         
         payment_account_col.update_one(
-            {"user_id": user_id},
+            {
+                "$or": [
+                    {"user_id": user_id},
+                    {"gc_billing_request_id": gc_billing_request_id}
+                ]
+            },
             {"$set": update_fields}
         )
 
@@ -83,6 +108,7 @@ def create_payment_account(user_id: str,
 def set_payment_account_status(user_id: Optional[str] = None,
                                paypal_subscription_id: Optional[str] = None,
                                radom_subscription_id: Optional[str] = None,
+                               gc_billing_request_id: Optional[str] = None,
                                status: Optional[str] = None) -> None:
     print("UPDATING PAYMENT ACCOUNT STATUS...")
     
@@ -139,11 +165,30 @@ def set_payment_account_status(user_id: Optional[str] = None,
         else:
             print("PAYMENT ACCOUNT NOT FOUND")
 
+    # Find the payment account by gc_billing_request_id
+    if gc_billing_request_id:
+        print("GC BILLING REQUEST ID IS NOT NULL: ", gc_billing_request_id)
+        print("LOOKING FOR PAYMENT ACCOUNT...")
+        payment_account = payment_account_col.find_one({
+            "gc_billing_request_id": gc_billing_request_id
+        })
+        if payment_account:
+            print("FOUND PAYMENT ACCOUNT")
+            payment_account_col.update_one(
+                {"gc_billing_request_id": gc_billing_request_id},
+                {"$set": {"status": status}}
+            )
+            print("UPDATED PAYMENT ACCOUNT")
+            return
+        else:
+            print("PAYMENT ACCOUNT NOT FOUND")
+
 
 def get_payment_account(user_id: str, 
                         paypal_subscription_id: str = None,
                         radom_checkout_session_id: str = None,
-                        radom_subscription_id: str = None) -> Optional[PaymentAccount]:
+                        radom_subscription_id: str = None,
+                        gc_billing_request_id: str = None) -> Optional[PaymentAccount]:
 
     print("GETTING PAYMENT ACCOUNT...")
 
@@ -161,6 +206,11 @@ def get_payment_account(user_id: str,
         print("RADOM SUBSCRIPTION ID IS NOT NONE")
         result = payment_account_col.find_one({
             "radom_subscription_id": radom_subscription_id
+        })
+    elif gc_billing_request_id is not None:
+        print("GC BILLING REQUEST ID IS NOT NONE")
+        result = payment_account_col.find_one({
+            "gc_billing_request_id": gc_billing_request_id
         })
     else:
         print("USER ID IS NOT NONE")
