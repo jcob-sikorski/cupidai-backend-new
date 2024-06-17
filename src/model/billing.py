@@ -13,9 +13,8 @@ class PaymentAccount(BaseModel):
     radom_checkout_session_id: str | None = None
     amount: float | None = None
     gc_billing_request_id: str | None = None
-    gc_customer_id: str | None = None
-    gc_payment_id: str | None = None
-    gc_mandate_id: str | None = None
+    gc_subscription_id: str | None = None
+    gc_mandate_count: int | None = None
     plan_id: str | None = None
     referral_id: Optional[str] = None
     status: str | None = None # disabled, active, payment processsed

@@ -21,14 +21,13 @@ def create_payment_account(user_id: str,
                            amount: Optional[float] = None,
                            radom_product_id: Optional[str] = None,
                            gc_billing_request_id: Optional[str] = None,
-                           gc_customer_id: Optional[str] = None,
-                           gc_payment_id: Optional[str] = None,
-                           gc_mandate_id: Optional[str] = None,
+                           gc_subscription_id: Optional[str] = None,
+                           gc_mandate_count: Optional[int] = None,
                            plan_id: Optional[str] = None,
                            status: Optional[str] = None,
                            referral_id: Optional[str] = None) -> Optional[PaymentAccount]:
     
-    print("CREATING PAYMENT ACCOUNT")
+    # print("CREATING PAYMENT ACCOUNT")
 
     payment_account = payment_account_col.find_one({
         "$or": [
@@ -38,7 +37,7 @@ def create_payment_account(user_id: str,
     })
 
     if not payment_account:
-        print("PAYMENT ACCOUNT NOT FOUND - CREATING NEW ONE...")
+        # print("PAYMENT ACCOUNT NOT FOUND - CREATING NEW ONE...")
         # Create a new payment account
         payment_account = {
             "user_id": user_id,
@@ -50,9 +49,8 @@ def create_payment_account(user_id: str,
             "amount": amount,
             "radom_product_id": radom_product_id,
             "gc_billing_request_id": gc_billing_request_id,
-            "gc_customer_id": gc_customer_id,
-            "gc_payment_id": gc_payment_id,
-            "gc_mandate_id": gc_mandate_id,
+            "gc_subscription_id": gc_subscription_id,
+            "gc_mandate_count": gc_mandate_count,
             "plan_id": plan_id,
             "status": status,
             "referral_id": referral_id
@@ -71,9 +69,7 @@ def create_payment_account(user_id: str,
             "amount": amount,
             "radom_product_id": radom_product_id,
             "gc_billing_request_id": gc_billing_request_id,
-            "gc_customer_id": gc_customer_id,
-            "gc_payment_id": gc_payment_id,
-            "gc_mandate_id": gc_mandate_id,
+            "gc_subscription_id": gc_subscription_id,
             "plan_id": plan_id,
             "status": status,
         }
@@ -81,9 +77,16 @@ def create_payment_account(user_id: str,
         if referral_id is not None:
             update_fields["referral_id"] = referral_id
 
+        # Filter out None values
         update_fields = {key: value for key, value in update_fields.items() if value is not None}
 
-        print(f"PAYMENT ACCOUNT MODEL FOR UPDATE: {update_fields}")
+        # Prepare the update query
+        update_query = {"$set": update_fields}
+        
+        if gc_mandate_count is not None:
+            update_query["$inc"] = {"gc_mandate_count": int(gc_mandate_count)}
+
+        print(f"PAYMENT ACCOUNT MODEL FOR UPDATE: {update_query}")
         
         payment_account_col.update_one(
             {
@@ -92,7 +95,7 @@ def create_payment_account(user_id: str,
                     {"gc_billing_request_id": gc_billing_request_id}
                 ]
             },
-            {"$set": update_fields}
+            update_query
         )
 
     if payment_account is not None:

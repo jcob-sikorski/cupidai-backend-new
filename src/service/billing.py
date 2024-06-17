@@ -30,6 +30,9 @@ import service.email as email_service
 
 import service.referral as referral_service
 
+from datetime import datetime
+
+SANDBOX_ACCESS_TOKEN = "sandbox_3c1d8dUhpG3tAe7Lzf5TC5AhCJ5cMCG9D2Pn-vCR"
 
 def has_permissions(feature: str, 
                     user: Account) -> bool:
@@ -236,6 +239,7 @@ async def radom_webhook(request: Request) -> None:
                                amount=amount,
                                radom_product_id=radom_product_id,
                                gc_billing_request_id=None,
+                               gc_subscription_id=None,
                                plan_id=None,
                                referral_id=referral_id,
                                status="active")
@@ -347,6 +351,7 @@ async def paypal_webhook(request: Request) -> None:
                                                  amount=amount,
                                                  radom_product_id=None,
                                                  gc_billing_request_id=None,
+                                                 gc_subscription_id=None,
                                                  plan_id=None,
                                                  referral_id=internal_metadata.referral_id,
                                                  status="active")
@@ -457,9 +462,6 @@ async def paypal_webhook(request: Request) -> None:
 
 async def create_gc_checkout_session(req: GCRequest,
                                      user: Account) -> str:
-    
-    SANDBOX_ACCESS_TOKEN = "sandbox_3c1d8dUhpG3tAe7Lzf5TC5AhCJ5cMCG9D2Pn-vCR"
-
     client = gocardless_pro.Client(access_token=SANDBOX_ACCESS_TOKEN, environment='sandbox')
 
     plan = get_product(plan_id=req.plan_id)
@@ -501,6 +503,8 @@ async def create_gc_checkout_session(req: GCRequest,
                            amount=plan.price,
                            radom_product_id=None,
                            gc_billing_request_id=billing_request_id,
+                           gc_subscription_id=None,
+                           gc_mandate_count=0,
                            plan_id=plan.plan_id,
                            referral_id=req.referral_id,
                            status="disabled")
@@ -521,23 +525,61 @@ async def gc_webhook(request: Request):
 
     for event in payload.get("events", []):
         action = event.get("action")
-        billing_request_id = event["links"].get("billing_request")
-        mandate_id = event["links"].get("mandate")
+        resource_type = event.get("resource_type")
 
-        print('ACTION:', action)
+        if resource_type == "payments" and action == "confirmed":
+            print("#################################################################")
+            print("PAYMENT ACTIVE")
+            billing_request = event.get("links").get("billing_request")
 
-        if billing_request_id:
-            if mandate_id:
-                create_payment_account(gc_billing_request_id=billing_request_id,
-                                       gc_mandate_id=mandate_id)
+            create_payment_account(gc_billing_request_id=billing_request,
+                                   status="active")
+            
+            print("MARKED PAYMENT AS ACTIVE")
+            
+        elif resource_type == "mandates" and action == "created":
+            billing_request = event.get("links").get("billing_request")
+            mandate = event.get("links").get("mandate")
 
-            elif action in ["confirmed", "failed"]:
-                create_payment_account(gc_billing_request_id=billing_request_id,
-                                       status="active" if action == "confirmed" else "disabled")
+            payment_account = get_payment_account(gc_billing_request_id=billing_request)
 
-            # print(f"Updated billing request {billing_request_id}: {billing_requests[billing_request_id]}")
-        else:
-            print(f"Event does not contain billing_request_id: {event}")
+            if payment_account.gc_mandate_count == 1:
+                print("#################################################################")
+                print("PAYMENT HAS BEEN COMPLETED")
+
+                client = gocardless_pro.Client(
+                    access_token=SANDBOX_ACCESS_TOKEN,
+                    environment='sandbox'
+                )
+
+                plan = get_product(plan_id=payment_account.plan_id)
+
+                print("CREATING SUBSCRIPTION")
+
+                subscription = client.subscriptions.create(
+                    params={
+                        "amount" : int(plan.price*100),
+                        "currency" : "GBP",
+                        "interval_unit" : "monthly",
+                        "day_of_month" : str(datetime.now().day),
+                        "links": {
+                            "mandate": mandate
+                        },
+                        "metadata": {
+                            "subscription_number": str(uuid4())
+                        }
+                    }, headers={
+                        'Idempotency-Key': str(uuid4())
+                })
+
+                print("SUBSCRIPTION CREATED:", subscription)
+
+                create_payment_account(gc_billing_request_id=billing_request,
+                                       gc_subscription_id=subscription.id,
+                                       status="active")
+                
+            create_payment_account(gc_billing_request_id=billing_request,
+                                   gc_mandate_count=1)
 
     return {"status": "ok"}
 
@@ -597,8 +639,7 @@ def cancel_plan(user: Account) -> bool:
     access_token = get_paypal_access_token()
 
     payment_account = get_payment_account(user_id=user.user_id)
-
-    payment_account = get_payment_account(user_id=user.user_id)
+    
     if payment_account and hasattr(payment_account, 'paypal_subscription_id') \
        and payment_account.paypal_subscription_id is not None \
        and payment_account.provider == "paypal":
@@ -651,7 +692,15 @@ def cancel_plan(user: Account) -> bool:
 
         if response.status_code == 200:
             return True
+        
+    elif payment_account and hasattr(payment_account, 'gc_billing_request_id') \
+         and payment_account.gc_billing_request_id is not None \
+         and payment_account.provider == "gc":
+        
+        client = gocardless_pro.Client(access_token=SANDBOX_ACCESS_TOKEN, environment='sandbox')
 
+        # TODO: get payment subscription from db and based on it cancel the subscription
+        client.subscriptions.cancel("SB123")
     return False
 
 
@@ -698,9 +747,8 @@ def create_payment_account(user_id: Optional[str] = None,
                            amount: Optional[float] = None,
                            radom_product_id: Optional[str] = None,
                            gc_billing_request_id: Optional[str] = None,
-                           gc_customer_id: Optional[str] = None,
-                           gc_payment_id: Optional[str] = None,
-                           gc_mandate_id: Optional[str] = None,
+                           gc_subscription_id: Optional[str] = None,
+                           gc_mandate_count: Optional[int] = None,
                            plan_id: Optional[str] = None,
                            status: Optional[str] = None,
                            referral_id: Optional[str] = None) -> Optional[PaymentAccount]:
@@ -714,9 +762,8 @@ def create_payment_account(user_id: Optional[str] = None,
                                        amount,
                                        radom_product_id,
                                        gc_billing_request_id,
-                                       gc_customer_id,
-                                       gc_payment_id,
-                                       gc_mandate_id,
+                                       gc_subscription_id,
+                                       gc_mandate_count,
                                        plan_id,
                                        status,
                                        referral_id)
