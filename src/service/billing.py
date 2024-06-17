@@ -578,6 +578,12 @@ async def gc_webhook(request: Request):
                                        gc_subscription_id=subscription.id,
                                        status="active")
                 
+            elif resource_type == "subscriptions" and action == "cancelled":
+                subscription_id = event.get("links").get("subscription")
+
+                create_payment_account(gc_subscription_id=subscription_id,
+                                       status="disabled")
+                
             create_payment_account(gc_billing_request_id=billing_request,
                                    gc_mandate_count=1)
 
@@ -699,8 +705,10 @@ def cancel_plan(user: Account) -> bool:
         
         client = gocardless_pro.Client(access_token=SANDBOX_ACCESS_TOKEN, environment='sandbox')
 
-        # TODO: get payment subscription from db and based on it cancel the subscription
-        client.subscriptions.cancel("SB123")
+        if payment_account.gc_subscription_id:
+            res = client.subscriptions.cancel(payment_account.gc_subscription_id)
+            print("CANCELLED GC SUBSCRIPTION:", res)
+
     return False
 
 

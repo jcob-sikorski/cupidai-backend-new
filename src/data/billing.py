@@ -32,7 +32,8 @@ def create_payment_account(user_id: str,
     payment_account = payment_account_col.find_one({
         "$or": [
             {"user_id": user_id},
-            {"gc_billing_request_id": gc_billing_request_id}
+            {"gc_billing_request_id": gc_billing_request_id},
+            {"gc_subscription_id": gc_subscription_id}
         ]
     })
 
@@ -92,7 +93,8 @@ def create_payment_account(user_id: str,
             {
                 "$or": [
                     {"user_id": user_id},
-                    {"gc_billing_request_id": gc_billing_request_id}
+                    {"gc_billing_request_id": gc_billing_request_id},
+                    {"gc_subscription_id": gc_subscription_id}
                 ]
             },
             update_query
