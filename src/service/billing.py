@@ -32,8 +32,6 @@ import service.referral as referral_service
 
 from datetime import datetime
 
-SANDBOX_ACCESS_TOKEN = "sandbox_3c1d8dUhpG3tAe7Lzf5TC5AhCJ5cMCG9D2Pn-vCR"
-
 def has_permissions(feature: str, 
                     user: Account) -> bool:
     
@@ -462,7 +460,7 @@ async def paypal_webhook(request: Request) -> None:
 
 async def create_gc_checkout_session(req: GCRequest,
                                      user: Account) -> str:
-    client = gocardless_pro.Client(access_token=SANDBOX_ACCESS_TOKEN, environment='sandbox')
+    client = gocardless_pro.Client(access_token=os.getenv("GC_ACCESS_TOKEN"), environment='sandbox')
 
     plan = get_product(plan_id=req.plan_id)
 
@@ -547,7 +545,7 @@ async def gc_webhook(request: Request):
                 print("PAYMENT HAS BEEN COMPLETED")
 
                 client = gocardless_pro.Client(
-                    access_token=SANDBOX_ACCESS_TOKEN,
+                    access_token=os.getenv("GC_ACCESS_TOKEN"),
                     environment='sandbox'
                 )
 
@@ -727,7 +725,7 @@ def cancel_plan(user: Account) -> bool:
          and payment_account.gc_billing_request_id is not None \
          and payment_account.provider == "gc":
         
-        client = gocardless_pro.Client(access_token=SANDBOX_ACCESS_TOKEN, environment='sandbox')
+        client = gocardless_pro.Client(access_token=os.getenv("GC_ACCESS_TOKEN"), environment='sandbox')
 
         if payment_account.gc_subscription_id:
             res = client.subscriptions.cancel(payment_account.gc_subscription_id)
