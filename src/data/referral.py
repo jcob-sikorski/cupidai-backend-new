@@ -158,7 +158,15 @@ def update_statistics(user_id: str,
             )
             print(f"Update signup stats for {user_id} in {period}: {result}")
     elif (amount_bought is not None) and amount_bought != 0.00:
-        percentage = Earnings(user_id)
+        result_earnings = earnings_col.find_one_and_update(
+            {"user_id": user_id},
+            updates_earnings,
+            upsert=True
+        )
+
+        result_earnings = earnings_col.find_one({"user_id": user_id})
+
+        percentage = result_earnings.percentage if result_earnings else 20
 
         mask = -1 if subscription_cancelled else 1
         amount = mask * amount_bought * percentage

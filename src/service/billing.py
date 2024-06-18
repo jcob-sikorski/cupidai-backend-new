@@ -493,7 +493,6 @@ async def create_gc_checkout_session(req: GCRequest,
         }
     })
 
-
     create_payment_account(user_id=user.user_id,
                            provider="gc",
                            paypal_plan_id=None,
@@ -574,9 +573,25 @@ async def gc_webhook(request: Request):
 
                 print("SUBSCRIPTION CREATED:", subscription)
 
-                create_payment_account(gc_billing_request_id=billing_request,
-                                       gc_subscription_id=subscription.id,
-                                       status="active")
+                payment_account = create_payment_account(gc_billing_request_id=billing_request,
+                                                         gc_subscription_id=subscription.id,
+                                                         status="active")
+                
+                account = account_service.get_by_id(user_id=payment_account.user_id)
+
+                email_service.send(account.email, 
+                                   "clwxmnsll00vvrmqenbal0jln",
+                                   username=account.username,
+                                   discord_link=os.getenv("DISCORD_LINK"))
+                
+                # if payment_account and payment_account.referral_id:
+                #     referral = referral_service.get_referral(payment_account.referral_id)
+
+                #     print(f"FOUND REFERRAL MODAL: {referral}")
+
+                #     referral_service.update_for_host(referral,
+                #                                      payment_account.amount,
+                #                                      subscription_cancelled=False)
                 
             create_payment_account(gc_billing_request_id=billing_request,
                                    gc_mandate_count=1)
@@ -584,10 +599,18 @@ async def gc_webhook(request: Request):
         elif resource_type == "subscriptions" and action == "cancelled":
             subscription_id = event.get("links").get("subscription")
             
-            create_payment_account(gc_billing_request_id=None,
-                                   gc_subscription_id=subscription_id,
-                                   gc_mandate_count=-2,
-                                   status="disabled")
+            payment_account = create_payment_account(gc_billing_request_id=None,
+                                                     gc_subscription_id=subscription_id,
+                                                     gc_mandate_count=-2,
+                                                     status="cancelled")
+            
+            account = account_service.get_by_id(user_id=payment_account.user_id)
+
+            email_service.send(account.email, 
+                               "clwxm0der014zw2uff7l0pu9w",
+                               username=account.username,
+                               discord_link=os.getenv("DISCORD_LINK"))
+            
     return {"status": "ok"}
 
 
