@@ -460,7 +460,7 @@ async def paypal_webhook(request: Request) -> None:
 
 async def create_gc_checkout_session(req: GCRequest,
                                      user: Account) -> str:
-    client = gocardless_pro.Client(access_token=os.getenv("GC_ACCESS_TOKEN"), environment='sandbox')
+    client = gocardless_pro.Client(access_token=os.getenv("GC_ACCESS_TOKEN"), environment=os.getenv("GC_MODE"))
 
     plan = get_product(plan_id=req.plan_id)
 
@@ -546,7 +546,7 @@ async def gc_webhook(request: Request):
 
                 client = gocardless_pro.Client(
                     access_token=os.getenv("GC_ACCESS_TOKEN"),
-                    environment='sandbox'
+                    environment=os.getenv("GC_MODE")
                 )
 
                 plan = get_product(plan_id=payment_account.plan_id)
@@ -725,7 +725,7 @@ def cancel_plan(user: Account) -> bool:
          and payment_account.gc_billing_request_id is not None \
          and payment_account.provider == "gc":
         
-        client = gocardless_pro.Client(access_token=os.getenv("GC_ACCESS_TOKEN"), environment='sandbox')
+        client = gocardless_pro.Client(access_token=os.getenv("GC_ACCESS_TOKEN"), environment=os.getenv("GC_MODE"))
 
         if payment_account.gc_subscription_id:
             res = client.subscriptions.cancel(payment_account.gc_subscription_id)
