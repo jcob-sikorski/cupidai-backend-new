@@ -532,8 +532,8 @@ async def gc_webhook(request: Request):
             print("PAYMENT ACTIVE")
             billing_request = event.get("links").get("billing_request")
 
-            create_payment_account(gc_billing_request_id=billing_request,
-                                   status="active")
+            set_payment_account_status(gc_billing_request_id=billing_request,
+                                       status="active")
             
             print("MARKED PAYMENT AS ACTIVE")
             
@@ -578,15 +578,16 @@ async def gc_webhook(request: Request):
                                        gc_subscription_id=subscription.id,
                                        status="active")
                 
-            elif resource_type == "subscriptions" and action == "cancelled":
-                subscription_id = event.get("links").get("subscription")
-
-                create_payment_account(gc_subscription_id=subscription_id,
-                                       status="disabled")
-                
             create_payment_account(gc_billing_request_id=billing_request,
                                    gc_mandate_count=1)
 
+        elif resource_type == "subscriptions" and action == "cancelled":
+            subscription_id = event.get("links").get("subscription")
+            
+            create_payment_account(gc_billing_request_id=None,
+                                   gc_subscription_id=subscription_id,
+                                   gc_mandate_count=-2,
+                                   status="disabled")
     return {"status": "ok"}
 
 
@@ -708,6 +709,8 @@ def cancel_plan(user: Account) -> bool:
         if payment_account.gc_subscription_id:
             res = client.subscriptions.cancel(payment_account.gc_subscription_id)
             print("CANCELLED GC SUBSCRIPTION:", res)
+        else:
+            print("PAYMENT ACCOUNT IS NOT VIABLE FOR PLAN CANCELLATION:", payment_account)
 
     return False
 
@@ -781,11 +784,13 @@ def set_payment_account_status(user_id: Optional[str] = None,
                                paypal_subscription_id: Optional[str] = None,
                                radom_subscription_id: Optional[str] = None,
                                gc_billing_request_id: Optional[str] = None,
+                               gc_subscription_id: Optional[str] = None,
                                status: Optional[str] = None) -> None:
     return data.set_payment_account_status(user_id,
                                            paypal_subscription_id,
                                            radom_subscription_id,
                                            gc_billing_request_id,
+                                           gc_subscription_id,
                                            status)
 
 
@@ -807,4 +812,5 @@ def get_current_plan(user: Account) -> Optional[Plan]:
 
     if payment_account and (payment_account.status == "active"):
         return get_product(paypal_plan_id=payment_account.paypal_plan_id,
-                           radom_product_id=payment_account.radom_product_id)
+                           radom_product_id=payment_account.radom_product_id,
+                           plan_id=payment_account.plan_id)

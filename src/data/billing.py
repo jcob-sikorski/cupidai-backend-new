@@ -114,6 +114,7 @@ def set_payment_account_status(user_id: Optional[str] = None,
                                paypal_subscription_id: Optional[str] = None,
                                radom_subscription_id: Optional[str] = None,
                                gc_billing_request_id: Optional[str] = None,
+                               gc_subscription_id: Optional[str] = None,
                                status: Optional[str] = None) -> None:
     print("UPDATING PAYMENT ACCOUNT STATUS...")
     
@@ -181,6 +182,24 @@ def set_payment_account_status(user_id: Optional[str] = None,
             print("FOUND PAYMENT ACCOUNT")
             payment_account_col.update_one(
                 {"gc_billing_request_id": gc_billing_request_id},
+                {"$set": {"status": status}}
+            )
+            print("UPDATED PAYMENT ACCOUNT")
+            return
+        else:
+            print("PAYMENT ACCOUNT NOT FOUND")
+
+    # Find the payment account by gc_billing_request_id
+    if gc_subscription_id:
+        print("GC SUBSCRIPTION ID IS NOT NULL: ", gc_subscription_id)
+        print("LOOKING FOR PAYMENT ACCOUNT...")
+        payment_account = payment_account_col.find_one({
+            "gc_subscription_id": gc_subscription_id
+        })
+        if payment_account:
+            print("FOUND PAYMENT ACCOUNT")
+            payment_account_col.update_one(
+                {"gc_subscription_id": gc_subscription_id},
                 {"$set": {"status": status}}
             )
             print("UPDATED PAYMENT ACCOUNT")
